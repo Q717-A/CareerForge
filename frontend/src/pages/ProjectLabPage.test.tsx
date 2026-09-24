@@ -279,5 +279,4 @@ describe("ProjectLabPage", () => {
     expect(await screen.findByText("可写入简历")).toBeInTheDocument();
     expect(screen.getByText(/后续仍需显式转入事实台账/)).toBeInTheDocument();
   });
-
 });
