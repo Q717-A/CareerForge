@@ -55,6 +55,9 @@ export default function ProjectLabPage() {
   const [submitting, setSubmitting] = useState(false);
   const [advancingId, setAdvancingId] = useState<number | null>(null);
   const [deliverableDrafts, setDeliverableDrafts] = useState<Record<number, string>>({});
+  const [verificationDrafts, setVerificationDrafts] = useState<
+    Record<number, { evidenceLocation: string; evidenceNote: string; resultSummary: string }>
+  >({});
 
   const jobMap = useMemo(
     () => new Map((jobs.data?.items ?? []).map((job) => [job.id, job])),
@@ -142,6 +145,51 @@ export default function ProjectLabPage() {
     } finally {
       setAdvancingId(null);
     }
+
+
+  const markVerified = async (project: ProjectLabProject) => {
+    const draft = verificationDrafts[project.id];
+    const evidenceLocation = (draft?.evidenceLocation ?? "").trim();
+    const evidenceNote = (draft?.evidenceNote ?? "").trim();
+    const resultSummary = (draft?.resultSummary ?? project.result_summary).trim();
+
+    const evidence = [...project.evidence];
+    if (evidenceLocation && !evidence.some((item) => item.location === evidenceLocation)) {
+      evidence.push({
+        type: evidenceLocation.includes("github.com") ? "repository" : "other",
+        location: evidenceLocation,
+        note: evidenceNote,
+      });
+    }
+    if (evidence.length === 0) {
+      message.warning("请先添加至少一条可回溯的证据");
+      return;
+    }
+    if (!resultSummary) {
+      message.warning("请先填写结果总结");
+      return;
+    }
+
+    setAdvancingId(project.id);
+    try {
+      await updateProjectLabProject(project.id, {
+        status: "verified",
+        evidence,
+        result_summary: resultSummary,
+      });
+      message.success("项目证据已核对，进入「已验证」阶段");
+      setVerificationDrafts((current) => {
+        const next = { ...current };
+        delete next[project.id];
+        return next;
+      });
+      await projects.reload();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "验证失败");
+    } finally {
+      setAdvancingId(null);
+    }
+  };
   };
 
   return (
@@ -281,6 +329,95 @@ export default function ProjectLabPage() {
                       {project.deliverables.map((item) => (
                         <Tag key={item}>{item}</Tag>
                       ))}
+                    </Space>
+                  )}
+                  {project.status === "implemented" && (
+                    <Space direction="vertical" size={6} style={{ width: "100%" }}>
+                      <Typography.Text type="secondary">
+                        下一步不是直接写进简历，而是留下可回溯证据并总结真实结果。
+                      </Typography.Text>
+                      <Input
+                        aria-label={`项目 ${project.id} 证据位置`}
+                        placeholder="GitHub 仓库、报告路径、公开链接等"
+                        value={verificationDrafts[project.id]?.evidenceLocation ?? ""}
+                        onChange={(event) =>
+                          setVerificationDrafts((current) => ({
+                            ...current,
+                            [project.id]: {
+                              evidenceLocation: event.target.value,
+                              evidenceNote: current[project.id]?.evidenceNote ?? "",
+                              resultSummary: current[project.id]?.resultSummary ?? "",
+                            },
+                          }))
+                        }
+                      />
+                      <Input
+                        aria-label={`项目 ${project.id} 证据备注`}
+                        placeholder="可选：这份证据能证明什么"
+                        value={verificationDrafts[project.id]?.evidenceNote ?? ""}
+                        onChange={(event) =>
+                          setVerificationDrafts((current) => ({
+                            ...current,
+                            [project.id]: {
+                              evidenceLocation: current[project.id]?.evidenceLocation ?? "",
+                              evidenceNote: event.target.value,
+                              resultSummary: current[project.id]?.resultSummary ?? "",
+                            },
+                          }))
+                        }
+                      />
+                      <Input.TextArea
+                        aria-label={`项目 ${project.id} 结果总结`}
+                        placeholder="写真实结果：完成了什么、对比了什么、得到什么结论。不要补不存在的数字。"
+                        autoSize={{ minRows: 2, maxRows: 5 }}
+                        value={
+                          verificationDrafts[project.id]?.resultSummary ?? project.result_summary
+                        }
+                        onChange={(event) =>
+                          setVerificationDrafts((current) => ({
+                            ...current,
+                            [project.id]: {
+                              evidenceLocation: current[project.id]?.evidenceLocation ?? "",
+                              evidenceNote: current[project.id]?.evidenceNote ?? "",
+                              resultSummary: event.target.value,
+                            },
+                          }))
+                        }
+                      />
+                      <Button
+                        loading={advancingId === project.id}
+                        onClick={() => void markVerified(project)}
+                      >
+                        保存证据并标记已验证
+                      </Button>
+                    </Space>
+                  )}
+                  {project.result_summary && (
+                    <Typography.Text type="secondary">
+                      结果总结：{project.result_summary}
+                    </Typography.Text>
+                  )}
+                  {project.evidence.length > 0 && (
+                    <Space direction="vertical" size={2}>
+                      <Typography.Text type="secondary">
+                        证据：{project.evidence.length} 条
+                      </Typography.Text>
+                      {project.evidence.map((item, index) =>
+                        /^https?:\/\//.test(item.location) ? (
+                          <Typography.Link
+                            key={`${item.location}-${index}`}
+                            href={item.location}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {item.location}
+                          </Typography.Link>
+                        ) : (
+                          <Typography.Text key={`${item.location}-${index}`}>
+                            {item.location}
+                          </Typography.Text>
+                        ),
+                      )}
                     </Space>
                   )}
                 </Space>

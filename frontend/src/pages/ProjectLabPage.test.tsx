@@ -179,4 +179,56 @@ describe("ProjectLabPage", () => {
     expect(await screen.findByText("已实现")).toBeInTheDocument();
     expect(screen.getByText("完成数据预处理脚本")).toBeInTheDocument();
   });
+
+  it("requires evidence and a result summary before marking a project verified", async () => {
+    const implemented = project({
+      status: "implemented",
+      deliverables: ["完成可复现实验脚本"],
+    });
+    const verified = project({
+      status: "verified",
+      deliverables: ["完成可复现实验脚本"],
+      evidence: [
+        {
+          type: "repository",
+          location: "https://github.com/example/fault-diagnosis",
+          note: "代码与实验记录",
+        },
+      ],
+      result_summary: "完成传统模型与 1D-CNN 对比实验并保存结果。",
+    });
+    projectApi.listProjectLabProjects
+      .mockResolvedValueOnce([implemented])
+      .mockResolvedValueOnce([verified]);
+    projectApi.updateProjectLabProject.mockResolvedValue(verified);
+    renderPage();
+
+    fireEvent.change(await screen.findByLabelText("项目 1 证据位置"), {
+      target: { value: "https://github.com/example/fault-diagnosis" },
+    });
+    fireEvent.change(screen.getByLabelText("项目 1 证据备注"), {
+      target: { value: "代码与实验记录" },
+    });
+    fireEvent.change(screen.getByLabelText("项目 1 结果总结"), {
+      target: { value: "完成传统模型与 1D-CNN 对比实验并保存结果。" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "保存证据并标记已验证" }));
+
+    await waitFor(() => {
+      expect(projectApi.updateProjectLabProject).toHaveBeenCalledWith(1, {
+        status: "verified",
+        evidence: [
+          {
+            type: "repository",
+            location: "https://github.com/example/fault-diagnosis",
+            note: "代码与实验记录",
+          },
+        ],
+        result_summary: "完成传统模型与 1D-CNN 对比实验并保存结果。",
+      });
+    });
+    expect(await screen.findByText("已验证")).toBeInTheDocument();
+    expect(screen.getByText(/结果总结：完成传统模型/)).toBeInTheDocument();
+  });
+
 });
