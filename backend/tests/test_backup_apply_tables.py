@@ -84,9 +84,10 @@ def test_inspect_accepts_a_backup_exported_before_the_apply_tables(db_session, t
     preview = inspect_archive(old_archive, engine, tmp_path / "staging")
 
     assert preview["database"]["tables"]["job"] == 1
-    # 4 张新表由迁移补齐（空的），否则表集合校验会把它判成"不是 ResumeForge 的备份"。
+    # 旧备份缺失的后续业务表应全部由迁移补齐（空表），否则表集合校验会拒收。
     for name in APPLY_TABLES:
         assert preview["database"]["tables"][name] == 0
+    assert preview["database"]["tables"]["project_lab_project"] == 0
 
 
 def test_inspect_rejects_a_head_revision_backup_missing_the_apply_tables(db_session, tmp_path):
