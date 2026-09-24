@@ -318,5 +318,4 @@ describe("ProjectLabPage", () => {
     });
     expect(await screen.findByText(/已生成 1 条待确认事实草稿/)).toBeInTheDocument();
   });
-
 });
