@@ -88,3 +88,30 @@ def test_project_lab_list_filter(client):
     response = client.get("/api/project-lab", params={"status": "proposed"})
     assert response.status_code == 200
     assert [item["id"] for item in response.json()] == [project["id"]]
+
+def test_project_lab_crud_smoke(client):
+    project = _create(client)
+    project_id = project["id"]
+
+    fetched = client.get(f"/api/project-lab/{project_id}")
+    assert fetched.status_code == 200
+    assert fetched.json()["title"] == "基于公开数据集的轴承故障诊断"
+
+    updated = client.patch(
+        f"/api/project-lab/{project_id}",
+        json={
+            "problem_statement": "验证公开轴承数据上的故障识别流程。",
+            "target_roles": ["故障诊断算法工程师"],
+        },
+    )
+    assert updated.status_code == 200
+    assert updated.json()["problem_statement"] == "验证公开轴承数据上的故障识别流程。"
+
+    removed = client.delete(f"/api/project-lab/{project_id}")
+    assert removed.status_code == 204
+    assert client.get(f"/api/project-lab/{project_id}").status_code == 404
+
+
+def test_project_lab_unknown_status_is_rejected(client):
+    response = client.get("/api/project-lab", params={"status": "done"})
+    assert response.status_code == 422
