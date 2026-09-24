@@ -146,4 +146,38 @@ describe("ProjectLabPage", () => {
       await screen.findByText("目标岗位：#7（已删除或未加载到当前岗位列表）"),
     ).toBeInTheDocument();
   });
+
+  it("requires a real deliverable before moving learning to implemented", async () => {
+    projectApi.listProjectLabProjects
+      .mockResolvedValueOnce([project({ status: "learning", deliverables: [] })])
+      .mockResolvedValueOnce([
+        project({
+          status: "implemented",
+          deliverables: ["完成数据预处理脚本", "完成 1D-CNN 训练脚本"],
+        }),
+      ]);
+    projectApi.updateProjectLabProject.mockResolvedValue(
+      project({
+        status: "implemented",
+        deliverables: ["完成数据预处理脚本", "完成 1D-CNN 训练脚本"],
+      }),
+    );
+    renderPage();
+
+    const input = await screen.findByLabelText("项目 1 已完成交付物");
+    fireEvent.change(input, {
+      target: { value: "完成数据预处理脚本\n完成 1D-CNN 训练脚本" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "记录交付物并标记已实现" }));
+
+    await waitFor(() => {
+      expect(projectApi.updateProjectLabProject).toHaveBeenCalledWith(1, {
+        status: "implemented",
+        deliverables: ["完成数据预处理脚本", "完成 1D-CNN 训练脚本"],
+      });
+    });
+    expect(await screen.findByText("已实现")).toBeInTheDocument();
+    expect(screen.getByText("完成数据预处理脚本")).toBeInTheDocument();
+  });
+
 });

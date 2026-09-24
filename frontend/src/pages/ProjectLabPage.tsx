@@ -54,6 +54,7 @@ export default function ProjectLabPage() {
   const [skills, setSkills] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [advancingId, setAdvancingId] = useState<number | null>(null);
+  const [deliverableDrafts, setDeliverableDrafts] = useState<Record<number, string>>({});
 
   const jobMap = useMemo(
     () => new Map((jobs.data?.items ?? []).map((job) => [job.id, job])),
@@ -103,6 +104,39 @@ export default function ProjectLabPage() {
     try {
       await updateProjectLabProject(project.id, { status: "learning" });
       message.success("已进入学习阶段");
+      await projects.reload();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "状态更新失败");
+    } finally {
+      setAdvancingId(null);
+    }
+  };
+
+
+  const markImplemented = async (project: ProjectLabProject) => {
+    const draft = deliverableDrafts[project.id] ?? "";
+    const deliverables = Array.from(
+      new Set([
+        ...project.deliverables,
+        ...draft
+          .split(/[\n，,;；]/)
+          .map((item) => item.trim())
+          .filter(Boolean),
+      ]),
+    );
+    if (deliverables.length === 0) {
+      message.warning("请先记录至少一个实际交付物");
+      return;
+    }
+
+    setAdvancingId(project.id);
+    try {
+      await updateProjectLabProject(project.id, {
+        status: "implemented",
+        deliverables,
+      });
+      message.success("已记录交付物并进入「已实现」阶段");
+      setDeliverableDrafts((current) => ({ ...current, [project.id]: "" }));
       await projects.reload();
     } catch (error) {
       message.error(error instanceof Error ? error.message : "状态更新失败");
@@ -218,9 +252,37 @@ export default function ProjectLabPage() {
                     </Space>
                   )}
                   {project.status === "learning" && (
-                    <Typography.Text type="secondary">
-                      当前只先验证“开始学习”这一步；实现、证据验证和进入简历将在后续切片开放。
-                    </Typography.Text>
+                    <Space direction="vertical" size={6} style={{ width: "100%" }}>
+                      <Typography.Text type="secondary">
+                        学习完成后，先记录你真实产出的交付物，再进入「已实现」。不能一键跳过。
+                      </Typography.Text>
+                      <Input.TextArea
+                        aria-label={`项目 ${project.id} 已完成交付物`}
+                        placeholder="每行一项，例如：完成数据清洗脚本；完成基线模型对比实验"
+                        autoSize={{ minRows: 2, maxRows: 4 }}
+                        value={deliverableDrafts[project.id] ?? ""}
+                        onChange={(event) =>
+                          setDeliverableDrafts((current) => ({
+                            ...current,
+                            [project.id]: event.target.value,
+                          }))
+                        }
+                      />
+                      <Button
+                        loading={advancingId === project.id}
+                        onClick={() => void markImplemented(project)}
+                      >
+                        记录交付物并标记已实现
+                      </Button>
+                    </Space>
+                  )}
+                  {project.deliverables.length > 0 && (
+                    <Space size={[4, 4]} wrap>
+                      <Typography.Text type="secondary">交付物：</Typography.Text>
+                      {project.deliverables.map((item) => (
+                        <Tag key={item}>{item}</Tag>
+                      ))}
+                    </Space>
                   )}
                 </Space>
                 {project.status === "proposed" && (

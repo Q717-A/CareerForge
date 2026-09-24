@@ -32,9 +32,20 @@ def test_project_lab_verified_and_resume_ready_gates(client):
     assert client.patch(
         f"/api/project-lab/{project_id}", json={"status": "learning"}
     ).status_code == 200
-    assert client.patch(
+    blocked_implemented = client.patch(
         f"/api/project-lab/{project_id}", json={"status": "implemented"}
-    ).status_code == 200
+    )
+    assert blocked_implemented.status_code == 422
+    assert "交付物" in blocked_implemented.json()["detail"]
+
+    implemented = client.patch(
+        f"/api/project-lab/{project_id}",
+        json={
+            "status": "implemented",
+            "deliverables": ["完成可复现的数据预处理与模型训练脚本"],
+        },
+    )
+    assert implemented.status_code == 200
 
     blocked = client.patch(
         f"/api/project-lab/{project_id}", json={"status": "verified"}

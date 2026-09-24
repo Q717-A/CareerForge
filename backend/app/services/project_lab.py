@@ -23,6 +23,10 @@ def project_gate_warnings(project: ProjectLabProject) -> list[str]:
     warnings: list[str] = []
     rank = PROJECT_LAB_STATUS_RANK.get(project.status, 0)
 
+    if rank >= PROJECT_LAB_STATUS_RANK["implemented"]:
+        if not values["deliverables"]:
+            raise ValueError("进入 implemented 前必须记录至少一个实际交付物")
+
     if rank >= PROJECT_LAB_STATUS_RANK[PROJECT_LAB_STATUS_VERIFIED]:
         if not project.evidence:
             warnings.append("已进入验证阶段，但还没有任何证据来源")
@@ -70,6 +74,7 @@ def _prospective(project: ProjectLabProject, values: dict) -> dict:
         "status",
         "evidence",
         "result_summary",
+        "deliverables",
         "mastery_notes",
         "resume_bullets",
         "interview_questions",
