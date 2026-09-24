@@ -278,7 +278,7 @@ describe("ProjectLabPage", () => {
       });
     });
     expect(await screen.findByText("可写入简历")).toBeInTheDocument();
-    expect(screen.getByText(/后续仍需显式转入事实台账/)).toBeInTheDocument();
+    expect(screen.getByText(/仍需转入事实台账并再次确认/)).toBeInTheDocument();
   });
 
   it("converts a resume-ready project into pending claim drafts only on explicit click", async () => {
