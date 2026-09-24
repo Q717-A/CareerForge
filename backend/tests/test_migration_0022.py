@@ -2,6 +2,9 @@
 
 from alembic import command
 from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.orm import Session
+
+from app.models.job import Job
 
 from app.database_migrations import build_alembic_config
 
@@ -61,16 +64,9 @@ def test_upgrade_preserves_existing_job_rows(tmp_path):
     config = build_alembic_config(engine)
     try:
         command.upgrade(config, PREVIOUS_REVISION)
-        with engine.begin() as connection:
-            connection.execute(
-                text(
-                    "INSERT INTO job "
-                    "(title, company, source, description, requirements, additional_info, status, "
-                    "favorite, note, created_at, updated_at) "
-                    "VALUES ('机械设计工程师', '示例公司', 'manual', '', '', '', 'open', "
-                    "0, '', '2026-09-24', '2026-09-24')"
-                )
-            )
+        with Session(engine) as session:
+            session.add(Job(title="机械设计工程师", company="示例公司"))
+            session.commit()
 
         command.upgrade(config, HEAD_REVISION)
 
