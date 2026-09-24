@@ -58,6 +58,9 @@ export default function ProjectLabPage() {
   const [verificationDrafts, setVerificationDrafts] = useState<
     Record<number, { evidenceLocation: string; evidenceNote: string; resultSummary: string }>
   >({});
+  const [resumeReadyDrafts, setResumeReadyDrafts] = useState<
+    Record<number, { masteryNotes: string; resumeBullets: string; interviewQuestions: string }>
+  >({});
 
   const jobMap = useMemo(
     () => new Map((jobs.data?.items ?? []).map((job) => [job.id, job])),
@@ -186,6 +189,64 @@ export default function ProjectLabPage() {
       await projects.reload();
     } catch (error) {
       message.error(error instanceof Error ? error.message : "验证失败");
+    } finally {
+      setAdvancingId(null);
+    }
+  };
+
+
+  const markResumeReady = async (project: ProjectLabProject) => {
+    const draft = resumeReadyDrafts[project.id];
+    const masteryNotes = (draft?.masteryNotes ?? project.mastery_notes).trim();
+    const resumeBullets = Array.from(
+      new Set([
+        ...project.resume_bullets,
+        ...(draft?.resumeBullets ?? "")
+          .split(/\n/)
+          .map((item) => item.trim())
+          .filter(Boolean),
+      ]),
+    );
+    const interviewQuestions = Array.from(
+      new Set([
+        ...project.interview_questions,
+        ...(draft?.interviewQuestions ?? "")
+          .split(/\n/)
+          .map((item) => item.trim())
+          .filter(Boolean),
+      ]),
+    );
+
+    if (!masteryNotes) {
+      message.warning("请先写清楚你真正掌握了什么");
+      return;
+    }
+    if (resumeBullets.length === 0) {
+      message.warning("请先准备至少一条可核对的简历表述");
+      return;
+    }
+    if (interviewQuestions.length === 0) {
+      message.warning("请先准备至少一个面试追问");
+      return;
+    }
+
+    setAdvancingId(project.id);
+    try {
+      await updateProjectLabProject(project.id, {
+        status: "resume_ready",
+        mastery_notes: masteryNotes,
+        resume_bullets: resumeBullets,
+        interview_questions: interviewQuestions,
+      });
+      message.success("项目已达到「可写入简历」门槛");
+      setResumeReadyDrafts((current) => {
+        const next = { ...current };
+        delete next[project.id];
+        return next;
+      });
+      await projects.reload();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "掌握检查失败");
     } finally {
       setAdvancingId(null);
     }
@@ -417,6 +478,79 @@ export default function ProjectLabPage() {
                           </Typography.Text>
                         ),
                       )}
+                    </Space>
+                  )}
+                  {project.status === "verified" && (
+                    <Space direction="vertical" size={6} style={{ width: "100%" }}>
+                      <Typography.Text type="secondary">
+                        最后一道门槛：确认你能讲清原理、准备真实简历表述，并预演面试追问。
+                      </Typography.Text>
+                      <Input.TextArea
+                        aria-label={`项目 ${project.id} 掌握说明`}
+                        placeholder="例如：能够解释数据预处理、基线模型、1D-CNN 结构选择与误差来源"
+                        autoSize={{ minRows: 2, maxRows: 5 }}
+                        value={resumeReadyDrafts[project.id]?.masteryNotes ?? project.mastery_notes}
+                        onChange={(event) =>
+                          setResumeReadyDrafts((current) => ({
+                            ...current,
+                            [project.id]: {
+                              masteryNotes: event.target.value,
+                              resumeBullets: current[project.id]?.resumeBullets ?? "",
+                              interviewQuestions: current[project.id]?.interviewQuestions ?? "",
+                            },
+                          }))
+                        }
+                      />
+                      <Input.TextArea
+                        aria-label={`项目 ${project.id} 简历表述`}
+                        placeholder="每行一条。只写已经被证据支持的内容。"
+                        autoSize={{ minRows: 2, maxRows: 5 }}
+                        value={resumeReadyDrafts[project.id]?.resumeBullets ?? ""}
+                        onChange={(event) =>
+                          setResumeReadyDrafts((current) => ({
+                            ...current,
+                            [project.id]: {
+                              masteryNotes: current[project.id]?.masteryNotes ?? "",
+                              resumeBullets: event.target.value,
+                              interviewQuestions: current[project.id]?.interviewQuestions ?? "",
+                            },
+                          }))
+                        }
+                      />
+                      <Input.TextArea
+                        aria-label={`项目 ${project.id} 面试追问`}
+                        placeholder="每行一个可能被追问的问题"
+                        autoSize={{ minRows: 2, maxRows: 5 }}
+                        value={resumeReadyDrafts[project.id]?.interviewQuestions ?? ""}
+                        onChange={(event) =>
+                          setResumeReadyDrafts((current) => ({
+                            ...current,
+                            [project.id]: {
+                              masteryNotes: current[project.id]?.masteryNotes ?? "",
+                              resumeBullets: current[project.id]?.resumeBullets ?? "",
+                              interviewQuestions: event.target.value,
+                            },
+                          }))
+                        }
+                      />
+                      <Button
+                        type="primary"
+                        loading={advancingId === project.id}
+                        onClick={() => void markResumeReady(project)}
+                      >
+                        完成掌握检查并允许写入简历
+                      </Button>
+                    </Space>
+                  )}
+                  {project.status === "resume_ready" && (
+                    <Space direction="vertical" size={4}>
+                      <Typography.Text strong type="success">
+                        已达到可写入简历门槛；后续仍需显式转入事实台账，不会自动进入正式简历。
+                      </Typography.Text>
+                      <Typography.Text>掌握说明：{project.mastery_notes}</Typography.Text>
+                      {project.resume_bullets.map((item) => (
+                        <Typography.Text key={item}>简历表述：{item}</Typography.Text>
+                      ))}
                     </Space>
                   )}
                 </Space>

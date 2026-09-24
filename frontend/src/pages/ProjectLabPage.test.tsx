@@ -230,4 +230,54 @@ describe("ProjectLabPage", () => {
     expect(await screen.findByText("已验证")).toBeInTheDocument();
     expect(screen.getByText(/结果总结：完成传统模型/)).toBeInTheDocument();
   });
+
+  it("requires mastery, resume wording, and interview questions before resume-ready", async () => {
+    const verified = project({
+      status: "verified",
+      deliverables: ["完成可复现实验脚本"],
+      evidence: [
+        {
+          type: "repository",
+          location: "https://github.com/example/fault-diagnosis",
+          note: "代码与实验记录",
+        },
+      ],
+      result_summary: "完成传统模型与 1D-CNN 对比实验并保存结果。",
+    });
+    const ready = project({
+      ...verified,
+      status: "resume_ready",
+      mastery_notes: "能够解释预处理、模型结构选择和误差来源。",
+      resume_bullets: ["基于公开轴承数据完成故障诊断实验，对比传统模型与 1D-CNN。"],
+      interview_questions: ["为什么选择 1D-CNN？"],
+    });
+    projectApi.listProjectLabProjects
+      .mockResolvedValueOnce([verified])
+      .mockResolvedValueOnce([ready]);
+    projectApi.updateProjectLabProject.mockResolvedValue(ready);
+    renderPage();
+
+    fireEvent.change(await screen.findByLabelText("项目 1 掌握说明"), {
+      target: { value: "能够解释预处理、模型结构选择和误差来源。" },
+    });
+    fireEvent.change(screen.getByLabelText("项目 1 简历表述"), {
+      target: { value: "基于公开轴承数据完成故障诊断实验，对比传统模型与 1D-CNN。" },
+    });
+    fireEvent.change(screen.getByLabelText("项目 1 面试追问"), {
+      target: { value: "为什么选择 1D-CNN？" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "完成掌握检查并允许写入简历" }));
+
+    await waitFor(() => {
+      expect(projectApi.updateProjectLabProject).toHaveBeenCalledWith(1, {
+        status: "resume_ready",
+        mastery_notes: "能够解释预处理、模型结构选择和误差来源。",
+        resume_bullets: ["基于公开轴承数据完成故障诊断实验，对比传统模型与 1D-CNN。"],
+        interview_questions: ["为什么选择 1D-CNN？"],
+      });
+    });
+    expect(await screen.findByText("可写入简历")).toBeInTheDocument();
+    expect(screen.getByText(/后续仍需显式转入事实台账/)).toBeInTheDocument();
+  });
+
 });
