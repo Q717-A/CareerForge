@@ -65,15 +65,21 @@ resume_ready
 
 ## 当前验证状态
 
-### Project Lab backend
+### Project Lab closed loop
 
-- implemented：是；
-- 静态集成复核：完成；
-- 专用 API/状态机测试：已写；
-- 0022 迁移测试：已写；
-- 旧备份迁移覆盖：已补；
-- Job 真实关联测试：已写；
-- GitHub Actions CI：**尚未实际运行**；
-- 当前结论：**implemented / waiting-for-CI，不标记 verified**。
+- 数据模型 / 0022 迁移 / 旧备份兼容：verified；
+- Job 真实关联与 fail-closed：verified；
+- proposed → learning → implemented → verified → resume_ready：verified；
+- resume_ready → 事实台账待确认草稿：verified（显式操作、可追溯、幂等）；
+- 前端 Project Lab 主路径、typecheck、format、lint、production build：verified；
+- Python 3.10 / 3.12、Windows 3.12 全量后端测试：verified；
+- 当前结论：**Project Lab 主闭环 verified**。
 
-在 CI 首次跑绿之前，不继续堆叠 Job Radar、Truth Engine 等大模块。
+### Project Lab assistant catalog integration
+
+- 功能域与菜单：implemented；
+- FeatureEntry / README 权威功能表 / 审计映射：implemented；
+- 专项知识审计与全量 CI：等待本切片执行；
+- 当前结论：**implemented / waiting-for-CI**。
+
+在这一小切片通过前，不开始 Job Radar 或 Truth Engine 大改。

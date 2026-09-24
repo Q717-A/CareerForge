@@ -23,10 +23,10 @@ CareerForge 按“小步实现 → 验证 → 再推进”开发，不把多个�
 - [x] 明确 CareerForge 产品愿景与事实红线；
 - [x] 建立 Project Lab 后端数据模型和基础 CRUD；
 - [x] 建立项目状态闸门；
-- [ ] 增加 Project Lab 前端页面（第一纵向切片已通过 smoke CI：列表 / 创建 / 关联岗位 / proposed → learning；第二切片已通过 smoke CI：learning → implemented 必须先记录真实交付物；第三切片已通过 smoke CI：implemented → verified 必须有证据和结果总结；第四切片已通过 smoke CI：verified → resume_ready 必须补齐掌握说明、简历表述和面试追问；第五切片后端已通过专项与全量 CI；前端“显式转入事实台账待确认草稿”入口已实现，等待本切片 smoke/full CI）；
-- [ ] 把 Project Lab 接入功能目录与助手能力地图；
+- [x] 增加 Project Lab 前端页面（创建 / 岗位关联 / proposed → learning → implemented → verified → resume_ready / 显式转入事实台账待确认草稿均已通过专项 smoke 与全量 CI）；
+- [ ] 把 Project Lab 接入功能目录与助手能力地图（目录条目、README 权威功能表与知识审计映射已实现，等待本切片 smoke/full CI）；
 - [ ] 增加 Truth Engine 五级事实状态；
-- [ ] 为 Project Lab 增加“转为事实台账草稿”的显式动作（后端已验证；前端显式入口 implemented，等待本切片 CI，不提前标记 verified）。
+- [x] 为 Project Lab 增加“转为事实台账草稿”的显式动作（只生成待确认事实、来源可追溯、重复点击幂等；前后端均已通过专项 smoke 与全量 CI）。
 
 ### Project Lab 状态链
 

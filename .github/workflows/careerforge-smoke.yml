@@ -7,6 +7,12 @@ on:
       - "backend/app/**project_lab**"
       - "backend/app/application.py"
       - "backend/app/models/__init__.py"
+      - "backend/app/services/feature_catalog.py"
+      - "backend/tests/test_assistant_knowledge_audit.py"
+      - "README.md"
+      - "backend/app/services/feature_catalog.py"
+      - "backend/tests/test_assistant_knowledge_audit.py"
+      - "README.md"
       - "backend/migrations/versions/0022_project_lab.py"
       - "backend/tests/test_project_lab.py"
       - "backend/tests/test_migration_0022.py"
@@ -52,20 +58,23 @@ jobs:
             backend/requirements.txt
             backend/requirements-dev.txt
       - run: python -m pip install -r requirements-dev.txt
-      - name: Ruff changed Project Lab surface
+      - name: Ruff CareerForge changed surface
         run: >-
           python -m ruff check
           app/api/project_lab.py
           app/models/project_lab.py
           app/schemas/project_lab.py
           app/services/project_lab.py
+          app/services/feature_catalog.py
           tests/test_project_lab.py
           tests/test_migration_0022.py
+          tests/test_assistant_knowledge_audit.py
       - name: Project Lab focused tests
         run: >-
           python -m pytest -q
           tests/test_project_lab.py
           tests/test_migration_0022.py
+          tests/test_assistant_knowledge_audit.py
           tests/test_database.py::test_alembic_upgrade_head_builds_schema_from_empty_database
           tests/test_backup_apply_tables.py::test_inspect_accepts_a_backup_exported_before_the_apply_tables
 
