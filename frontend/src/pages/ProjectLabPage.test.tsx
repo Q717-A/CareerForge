@@ -104,8 +104,47 @@ describe("ProjectLabPage", () => {
     fireEvent.click(await screen.findByRole("button", { name: /新建补强项目/ }));
 
     expect(screen.getByLabelText("项目名称")).toBeInTheDocument();
-    expect(screen.getByLabelText("关联目标岗位")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "关联目标岗位" })).toBeInTheDocument();
     expect(screen.getByLabelText("能力缺口")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "保存项目" })).toBeInTheDocument();
   });
+
+  it("creates a job-gap project with the selected real job", async () => {
+    projectApi.listProjectLabProjects.mockResolvedValue([]);
+    projectApi.createProjectLabProject.mockResolvedValue(project());
+    renderPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: /新建补强项目/ }));
+    fireEvent.change(screen.getByLabelText("项目名称"), {
+      target: { value: "机械结构仿真补强项目" },
+    });
+    fireEvent.change(screen.getByLabelText("能力缺口"), {
+      target: { value: "ADAMS，动力学仿真" },
+    });
+
+    const jobSelect = screen.getByRole("combobox", { name: "关联目标岗位" });
+    fireEvent.mouseDown(jobSelect);
+    fireEvent.click(await screen.findByText("示例公司 · 机械设计工程师"));
+    fireEvent.click(screen.getByRole("button", { name: "保存项目" }));
+
+    await waitFor(() => {
+      expect(projectApi.createProjectLabProject).toHaveBeenCalledWith({
+        title: "机械结构仿真补强项目",
+        origin: "job_gap",
+        target_job_id: 7,
+        gap_skills: ["ADAMS", "动力学仿真"],
+      });
+    });
+  });
+
+  it("does not hide a persisted job relation when the job list cannot resolve it", async () => {
+    jobsApi.listJobs.mockResolvedValue({ items: [], total: 0 });
+    projectApi.listProjectLabProjects.mockResolvedValue([project()]);
+    renderPage();
+
+    expect(
+      await screen.findByText("目标岗位：#7（已删除或未加载到当前岗位列表）"),
+    ).toBeInTheDocument();
+  });
+
 });
