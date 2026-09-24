@@ -23,7 +23,7 @@ CareerForge 按“小步实现 → 验证 → 再推进”开发，不把多个�
 - [x] 明确 CareerForge 产品愿景与事实红线；
 - [x] 建立 Project Lab 后端数据模型和基础 CRUD；
 - [x] 建立项目状态闸门；
-- [ ] 增加 Project Lab 前端页面；
+- [ ] 增加 Project Lab 前端页面（首个纵向切片已 implemented：列表 / 创建 / 关联岗位 / proposed → learning；等待 CI 与页面冒烟后再标记完成）；
 - [ ] 把 Project Lab 接入功能目录与助手能力地图；
 - [ ] 增加 Truth Engine 五级事实状态；
 - [ ] 为 Project Lab 增加“转为事实台账草稿”的显式动作。

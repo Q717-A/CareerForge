@@ -6,6 +6,7 @@ import App from "./App";
 vi.mock("./pages/HomePage", () => ({ default: () => <div>首页内容</div> }));
 vi.mock("./pages/JobsPage", () => ({ default: () => <div>岗位广场内容</div> }));
 vi.mock("./pages/ProfilePage", () => ({ default: () => <div>我的资料内容</div> }));
+vi.mock("./pages/ProjectLabPage", () => ({ default: () => <div>项目实验室内容</div> }));
 vi.mock("./pages/ResumesPage", () => ({ default: () => <div>简历中心内容</div> }));
 vi.mock("./pages/FavoritesPage", () => ({ default: () => <div>收藏夹内容</div> }));
 vi.mock("./pages/AssistantPage", () => ({ default: () => <div>求职助手内容</div> }));
@@ -58,5 +59,8 @@ describe("application navigation", () => {
 
     fireEvent.click(screen.getByText("求职助手"));
     expect(await screen.findByText("求职助手内容")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("项目实验室"));
+    expect(await screen.findByText("项目实验室内容")).toBeInTheDocument();
   });
 });
