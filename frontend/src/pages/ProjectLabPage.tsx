@@ -5,18 +5,7 @@
  * proposed → learning。更高状态故意不在这一版 UI 里提前暴露，等对应表单和验证闭环完成再放开。
  */
 import { ExperimentOutlined, PlusOutlined } from "@ant-design/icons";
-import {
-  App,
-  Button,
-  Card,
-  Empty,
-  Input,
-  Select,
-  Skeleton,
-  Space,
-  Tag,
-  Typography,
-} from "antd";
+import { App, Button, Card, Empty, Input, Select, Skeleton, Space, Tag, Typography } from "antd";
 import { useMemo, useState } from "react";
 import { listJobs } from "../api/jobs";
 import {
@@ -138,7 +127,8 @@ export default function ProjectLabPage() {
             项目实验室
           </Typography.Title>
           <Typography.Text type="secondary">
-            把岗位缺口变成真正做完、能解释、可验证的项目。AI 推荐的项目不会因为创建了就自动进入简历。
+            把岗位缺口变成真正做完、能解释、可验证的项目。AI
+            推荐的项目不会因为创建了就自动进入简历。
           </Typography.Text>
         </Space>
         <Button
