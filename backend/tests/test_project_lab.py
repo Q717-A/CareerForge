@@ -115,3 +115,52 @@ def test_project_lab_crud_smoke(client):
 def test_project_lab_unknown_status_is_rejected(client):
     response = client.get("/api/project-lab", params={"status": "done"})
     assert response.status_code == 422
+
+def test_project_lab_links_only_to_live_jobs(client):
+    job_response = client.post(
+        "/api/jobs",
+        json={
+            "title": "机械设计工程师",
+            "company": "示例公司",
+            "description": "负责机构设计与三维建模。",
+        },
+    )
+    assert job_response.status_code == 201
+    job_id = job_response.json()["id"]
+
+    linked = client.post(
+        "/api/project-lab",
+        json={
+            "title": "机械结构仿真补强项目",
+            "origin": "job_gap",
+            "target_job_id": job_id,
+        },
+    )
+    assert linked.status_code == 201
+    assert linked.json()["target_job_id"] == job_id
+
+    assert client.delete(f"/api/jobs/{job_id}").status_code == 204
+
+    rejected = client.post(
+        "/api/project-lab",
+        json={
+            "title": "不应关联到已删除岗位",
+            "origin": "job_gap",
+            "target_job_id": job_id,
+        },
+    )
+    assert rejected.status_code == 422
+    assert "岗位不存在或已被删除" in rejected.json()["detail"]
+
+
+def test_project_lab_rejects_unknown_job_id(client):
+    response = client.post(
+        "/api/project-lab",
+        json={
+            "title": "无效关联",
+            "origin": "job_gap",
+            "target_job_id": 999999,
+        },
+    )
+    assert response.status_code == 422
+    assert "岗位不存在或已被删除" in response.json()["detail"]

@@ -47,7 +47,10 @@ def read_project(project_id: int, db: Session = Depends(get_db)):
 
 @router.post("", response_model=ProjectLabOut, status_code=201)
 def create_project_entry(payload: ProjectLabCreate, db: Session = Depends(get_db)):
-    return project_out(create_project(db, payload))
+    try:
+        return project_out(create_project(db, payload))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.patch("/{project_id}", response_model=ProjectLabOut)

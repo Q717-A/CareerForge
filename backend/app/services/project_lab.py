@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
+from . import trash
 from ..models.job import Job
 from ..models.project_lab import (
     PROJECT_LAB_STATUS_RANK,
@@ -46,9 +47,12 @@ def project_out(project: ProjectLabProject) -> ProjectLabOut:
 
 
 def _resolve_job(db: Session, target_job_id: int | None) -> int | None:
+    """只允许关联仍然存在的正式岗位；错误 ID 不得静默变成 None。"""
     if target_job_id is None:
         return None
-    return target_job_id if db.get(Job, target_job_id) is not None else None
+    if trash.get_live(db, Job, target_job_id) is None:
+        raise ValueError("关联岗位不存在或已被删除")
+    return target_job_id
 
 
 def _validate_transition(current: str, target: str) -> None:
