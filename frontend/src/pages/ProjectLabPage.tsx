@@ -194,7 +194,6 @@ export default function ProjectLabPage() {
     }
   };
 
-
   const markResumeReady = async (project: ProjectLabProject) => {
     const draft = resumeReadyDrafts[project.id];
     const masteryNotes = (draft?.masteryNotes ?? project.mastery_notes).trim();
