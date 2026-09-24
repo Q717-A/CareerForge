@@ -173,7 +173,7 @@ def test_chat_migration_builds_history_tables_and_cascades(tmp_path):
         with migration_engine.connect() as connection:
             assert (
                 connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-                == "0021_candidate_additional_info"
+                == "0022_project_lab"
             )
 
         with Session(migration_engine) as session:
@@ -271,4 +271,3 @@ async def test_search_web_raises_on_zero_results_for_a_non_career_question(monke
     monkeypatch.setattr("app.services.assistant.assistant_web_search.fetch_bing_rss", fake_fetch)
     with pytest.raises(AssistantSearchError, match="直接相关"):
         await search_web("帮我把外卖平台项目整理成台账条目")
-
