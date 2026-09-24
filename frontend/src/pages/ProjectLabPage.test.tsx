@@ -230,5 +230,4 @@ describe("ProjectLabPage", () => {
     expect(await screen.findByText("已验证")).toBeInTheDocument();
     expect(screen.getByText(/结果总结：完成传统模型/)).toBeInTheDocument();
   });
-
 });
