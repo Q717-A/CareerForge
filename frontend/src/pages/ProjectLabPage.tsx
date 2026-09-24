@@ -427,3 +427,12 @@ export default function ProjectLabPage() {
                   >
                     开始学习
                   </Button>
+                )}
+              </div>
+            </Card>
+          );
+        })}
+      </Space>
+    </div>
+  );
+}
