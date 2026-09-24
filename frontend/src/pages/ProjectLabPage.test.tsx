@@ -146,5 +146,4 @@ describe("ProjectLabPage", () => {
       await screen.findByText("目标岗位：#7（已删除或未加载到当前岗位列表）"),
     ).toBeInTheDocument();
   });
-
 });
