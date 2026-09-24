@@ -163,6 +163,15 @@ class ProjectLabUpdate(BaseModel):
         return _clean_list(value, info.field_name)
 
 
+class ProjectLabClaimDraftsOut(BaseModel):
+    """显式把 resume_ready 项目同步为事实台账「待确认」草稿后的结果。"""
+
+    project_id: int
+    created_count: int
+    existing_count: int
+    claim_ids: list[int] = Field(default_factory=list)
+
+
 class ProjectLabOut(ProjectLabBase):
     model_config = ConfigDict(from_attributes=True)
 
@@ -174,6 +183,7 @@ class ProjectLabOut(ProjectLabBase):
 
 __all__ = [
     "ProjectEvidence",
+    "ProjectLabClaimDraftsOut",
     "ProjectLabCreate",
     "ProjectLabOrigin",
     "ProjectLabOut",

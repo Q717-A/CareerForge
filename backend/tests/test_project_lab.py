@@ -175,3 +175,94 @@ def test_project_lab_rejects_unknown_job_id(client):
     )
     assert response.status_code == 422
     assert "岗位不存在或已被删除" in response.json()["detail"]
+
+def _advance_to_resume_ready(client, project_id: int, *, bullets: list[str] | None = None):
+    assert client.patch(
+        f"/api/project-lab/{project_id}", json={"status": "learning"}
+    ).status_code == 200
+    assert client.patch(
+        f"/api/project-lab/{project_id}",
+        json={
+            "status": "implemented",
+            "deliverables": ["完成可复现的数据预处理与模型训练脚本"],
+        },
+    ).status_code == 200
+    assert client.patch(
+        f"/api/project-lab/{project_id}",
+        json={
+            "status": "verified",
+            "evidence": [
+                {
+                    "type": "repository",
+                    "location": "https://github.com/example/project",
+                    "note": "代码与实验记录",
+                }
+            ],
+            "result_summary": "完成传统模型与 1D-CNN 对比实验，并保存可复现实验结果。",
+        },
+    ).status_code == 200
+    response = client.patch(
+        f"/api/project-lab/{project_id}",
+        json={
+            "status": "resume_ready",
+            "mastery_notes": "能够解释数据预处理、基线模型与 1D-CNN 的差异。",
+            "resume_bullets": bullets
+            or ["基于公开轴承数据完成故障诊断实验，对比传统模型与 1D-CNN。"],
+            "interview_questions": ["为什么选择 1D-CNN？"],
+        },
+    )
+    assert response.status_code == 200
+    return response.json()
+
+
+def test_project_lab_claim_drafts_require_resume_ready(client):
+    project = _create(client)
+    response = client.post(f"/api/project-lab/{project['id']}/claim-drafts")
+    assert response.status_code == 422
+    assert "resume_ready" in response.json()["detail"]
+    assert client.get("/api/claims").json()["total"] == 0
+
+
+def test_project_lab_claim_drafts_are_pending_traceable_and_idempotent(client):
+    project = _create(client)
+    project_id = project["id"]
+    _advance_to_resume_ready(
+        client,
+        project_id,
+        bullets=[
+            "基于公开轴承数据完成故障诊断实验，对比传统模型与 1D-CNN。",
+            "建立可复现实验流程并保存模型训练结果。",
+        ],
+    )
+
+    first = client.post(f"/api/project-lab/{project_id}/claim-drafts")
+    assert first.status_code == 200
+    assert first.json()["created_count"] == 2
+    assert first.json()["existing_count"] == 0
+    assert len(first.json()["claim_ids"]) == 2
+
+    claims = client.get("/api/claims").json()
+    assert claims["total"] == 2
+    assert claims["confirmed_count"] == 0
+    assert claims["pending_count"] == 2
+    for item in claims["items"]:
+        assert item["category"] == "项目经历"
+        assert item["subject"] == "基于公开数据集的轴承故障诊断"
+        assert item["verification_status"] == "待确认"
+        assert "【待确认" in item["candidate_wording"]
+        assert "【待补" in item["boundary"]
+        locations = [source["location"] for source in item["sources"]]
+        assert any(location.startswith(f"project-lab://project/{project_id}/") for location in locations)
+        assert "https://github.com/example/project" in locations
+
+    baseline = client.get("/api/claims/baseline").json()
+    assert baseline["confirmed_count"] == 0
+    assert len(baseline["blocked_wording"]) == 2
+
+    second = client.post(f"/api/project-lab/{project_id}/claim-drafts")
+    assert second.status_code == 200
+    assert second.json()["created_count"] == 0
+    assert second.json()["existing_count"] == 2
+    assert second.json()["claim_ids"] == first.json()["claim_ids"]
+    assert client.get("/api/claims").json()["total"] == 2
+

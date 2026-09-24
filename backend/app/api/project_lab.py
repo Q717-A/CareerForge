@@ -7,8 +7,14 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models.project_lab import PROJECT_LAB_STATUSES
-from ..schemas.project_lab import ProjectLabCreate, ProjectLabOut, ProjectLabUpdate
+from ..schemas.project_lab import (
+    ProjectLabClaimDraftsOut,
+    ProjectLabCreate,
+    ProjectLabOut,
+    ProjectLabUpdate,
+)
 from ..services.project_lab import (
+    create_claim_drafts_from_project,
     create_project,
     delete_project,
     list_projects,
@@ -35,6 +41,18 @@ def read_projects(
             db, status=status, target_job_id=target_job_id, limit=limit
         )
     ]
+
+
+@router.post("/{project_id}/claim-drafts", response_model=ProjectLabClaimDraftsOut)
+def create_project_claim_drafts(project_id: int, db: Session = Depends(get_db)):
+    """显式把可写入简历的项目转成「待确认」事实台账草稿。"""
+    project = project_or_none(db, project_id)
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project Lab 项目不存在")
+    try:
+        return create_claim_drafts_from_project(db, project)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/{project_id}", response_model=ProjectLabOut)

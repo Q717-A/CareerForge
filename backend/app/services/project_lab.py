@@ -7,6 +7,12 @@ from __future__ import annotations
 from sqlalchemy.orm import Session
 
 from . import trash
+from ..models.claim import (
+    CLAIM_CATEGORY_PROJECT,
+    RESPONSIBILITY_PARTICIPATED,
+    VERIFICATION_PENDING,
+    ClaimRecord,
+)
 from ..models.job import Job
 from ..models.project_lab import (
     PROJECT_LAB_STATUS_IMPLEMENTED,
@@ -15,7 +21,14 @@ from ..models.project_lab import (
     PROJECT_LAB_STATUS_VERIFIED,
     ProjectLabProject,
 )
-from ..schemas.project_lab import ProjectLabCreate, ProjectLabOut, ProjectLabUpdate
+from ..schemas.claim import ClaimCreate, SOURCE_TYPES
+from ..schemas.project_lab import (
+    ProjectLabClaimDraftsOut,
+    ProjectLabCreate,
+    ProjectLabOut,
+    ProjectLabUpdate,
+)
+from .claims import create_claim
 
 MAX_PROJECT_LAB_LIST = 500
 
@@ -104,6 +117,141 @@ def _validate_gates(values: dict) -> None:
             raise ValueError("进入 resume_ready 前必须准备至少一个面试追问")
 
 
+
+def _claim_source_marker(project_id: int, bullet_index: int) -> str:
+    """一条 Project Lab 简历表述在事实台账里的稳定来源标记。"""
+    return f"project-lab://project/{project_id}/resume-bullet/{bullet_index}"
+
+
+def _project_claim_sources(project: ProjectLabProject, marker: str) -> list[dict]:
+    """把 Project Lab 证据映射到事实台账来源；内部标记永远保留在第一条。"""
+    sources: list[dict] = [
+        {
+            "type": "other",
+            "location": marker,
+            "public": False,
+            "note": f"由 Project Lab #{project.id} 显式转入；原项目仍是证据总入口",
+        }
+    ]
+    seen_locations = {marker}
+    for evidence in project.evidence:
+        location = str(evidence.get("location") or "").strip()
+        if not location or location in seen_locations:
+            continue
+        evidence_type = str(evidence.get("type") or "other").strip()
+        if evidence_type not in SOURCE_TYPES:
+            evidence_type = "other"
+        sources.append(
+            {
+                "type": evidence_type,
+                "location": location[:1024],
+                "public": location.startswith(("http://", "https://")),
+                "note": str(evidence.get("note") or "").strip()[:500],
+            }
+        )
+        seen_locations.add(location)
+        # ClaimSource 最多 10 条；其余证据仍可通过第一条内部标记回到 Project Lab 查看。
+        if len(sources) >= 10:
+            break
+    if project.repository_url and project.repository_url not in seen_locations and len(sources) < 10:
+        sources.append(
+            {
+                "type": "repository",
+                "location": project.repository_url[:1024],
+                "public": project.repository_url.startswith(("http://", "https://")),
+                "note": "Project Lab 项目仓库",
+            }
+        )
+    return sources
+
+
+def _existing_claim_for_marker(
+    db: Session, project: ProjectLabProject, marker: str
+) -> ClaimRecord | None:
+    """查找仍存活的同源台账条目，保证重复点击转换不会复制出多份草稿。"""
+    records = (
+        db.query(ClaimRecord)
+        .filter(trash.live_only(ClaimRecord), ClaimRecord.subject == project.title)
+        .all()
+    )
+    for record in records:
+        if any(str(source.get("location") or "") == marker for source in (record.sources or [])):
+            return record
+    return None
+
+
+def create_claim_drafts_from_project(
+    db: Session, project: ProjectLabProject
+) -> ProjectLabClaimDraftsOut:
+    """把一个 resume_ready 项目显式同步为事实台账待确认草稿。
+
+    这里故意**不**创建「已确认」事实：Project Lab 的验证回答的是“项目是否真的做完并能讲清”，
+    事实台账还要再次核对对外表述、个人边界和承担程度。重复调用按来源标记幂等复用。
+    """
+    if project.status != PROJECT_LAB_STATUS_RESUME_READY:
+        raise ValueError("只有达到 resume_ready 的项目才能转入事实台账草稿")
+    _validate_gates(_prospective(project, {}))
+
+    source_fact_parts = [
+        "Project Lab 已完成项目。",
+        "交付物：" + "；".join(project.deliverables),
+        "结果总结：" + project.result_summary.strip(),
+        "掌握说明：" + project.mastery_notes.strip(),
+    ]
+    source_fact = "\n".join(source_fact_parts)
+    verification_details = [
+        str(item.get("location") or "").strip()[:1000]
+        for item in project.evidence
+        if str(item.get("location") or "").strip()
+    ][:20]
+
+    claim_ids: list[int] = []
+    created = 0
+    existing = 0
+    for index, bullet in enumerate(project.resume_bullets, start=1):
+        marker = _claim_source_marker(project.id, index)
+        current = _existing_claim_for_marker(db, project, marker)
+        if current is not None:
+            claim_ids.append(current.id)
+            existing += 1
+            continue
+
+        payload = ClaimCreate(
+            title=f"{project.title} · 简历表述 {index}",
+            category=CLAIM_CATEGORY_PROJECT,
+            subject=project.title,
+            source_fact=source_fact,
+            candidate_wording=(
+                f"{bullet}【待确认：从 Project Lab 转入，请核对表述与个人边界】"
+            ),
+            sources=_project_claim_sources(project, marker),
+            responsibility_level=RESPONSIBILITY_PARTICIPATED,
+            verification_status=VERIFICATION_PENDING,
+            allowed_uses=[],
+            interview_details={
+                "decisions": [],
+                "difficulties": [],
+                "verification": verification_details,
+                "result": project.result_summary,
+            },
+            boundary="【待补：请核对并写清个人承担范围】",
+            risk_notes=[
+                "由 Project Lab 转入的草稿；只有在事实台账中再次确认后才能进入正式简历。"
+            ],
+            last_verified="",
+        )
+        record = create_claim(db, payload)
+        claim_ids.append(record.id)
+        created += 1
+
+    return ProjectLabClaimDraftsOut(
+        project_id=project.id,
+        created_count=created,
+        existing_count=existing,
+        claim_ids=claim_ids,
+    )
+
+
 def list_projects(
     db: Session, *, status: str = "", target_job_id: int | None = None, limit: int = 200
 ) -> list[ProjectLabProject]:
@@ -162,6 +310,7 @@ def delete_project(db: Session, project_id: int) -> bool:
 
 __all__ = [
     "MAX_PROJECT_LAB_LIST",
+    "create_claim_drafts_from_project",
     "create_project",
     "delete_project",
     "list_projects",
