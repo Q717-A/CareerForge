@@ -1,5 +1,6 @@
 /** CareerForge Project Lab 接口。 */
 import type {
+  ProjectLabClaimDraftsResult,
   ProjectLabPayload,
   ProjectLabProject,
   ProjectLabStatus,
@@ -30,4 +31,9 @@ export function updateProjectLabProject(
 
 export function deleteProjectLabProject(id: number): Promise<void> {
   return request(`/project-lab/${id}`, { method: "DELETE" });
+}
+
+/** 显式把 resume_ready 项目的简历表述转成事实台账「待确认」草稿。 */
+export function createProjectLabClaimDrafts(id: number): Promise<ProjectLabClaimDraftsResult> {
+  return request(`/project-lab/${id}/claim-drafts`, { method: "POST" });
 }

@@ -1,14 +1,16 @@
 /**
- * Project Lab 第一条纵向切片。
+ * Project Lab 纵向闭环。
  *
- * 当前只开放已经有后端验证规则支撑的动作：查看项目、创建项目、关联真实岗位、
- * proposed → learning。更高状态故意不在这一版 UI 里提前暴露，等对应表单和验证闭环完成再放开。
+ * 页面只开放已经被后端闸门与回归测试支撑的动作：真实岗位关联、逐级完成项目、
+ * 验证证据、掌握检查，以及 resume_ready 后显式转入事实台账「待确认」草稿。
+ * 转入事实台账仍不是“已确认”，用户必须再次核对后才能用于正式简历。
  */
 import { ExperimentOutlined, PlusOutlined } from "@ant-design/icons";
 import { App, Button, Card, Empty, Input, Select, Skeleton, Space, Tag, Typography } from "antd";
 import { useMemo, useState } from "react";
 import { listJobs } from "../api/jobs";
 import {
+  createProjectLabClaimDrafts,
   createProjectLabProject,
   listProjectLabProjects,
   updateProjectLabProject,
@@ -54,6 +56,7 @@ export default function ProjectLabPage() {
   const [skills, setSkills] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [advancingId, setAdvancingId] = useState<number | null>(null);
+  const [claimDraftingId, setClaimDraftingId] = useState<number | null>(null);
   const [deliverableDrafts, setDeliverableDrafts] = useState<Record<number, string>>({});
   const [verificationDrafts, setVerificationDrafts] = useState<
     Record<number, { evidenceLocation: string; evidenceNote: string; resultSummary: string }>
@@ -248,6 +251,24 @@ export default function ProjectLabPage() {
       message.error(error instanceof Error ? error.message : "掌握检查失败");
     } finally {
       setAdvancingId(null);
+    }
+  };
+
+  const moveToClaimDrafts = async (project: ProjectLabProject) => {
+    setClaimDraftingId(project.id);
+    try {
+      const result = await createProjectLabClaimDrafts(project.id);
+      if (result.created_count > 0) {
+        message.success(
+          `已生成 ${result.created_count} 条待确认事实草稿，请到「事实台账」核对后再用于简历`,
+        );
+      } else {
+        message.info(`该项目已有 ${result.existing_count} 条事实台账草稿，本次未重复创建`);
+      }
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "转入事实台账失败");
+    } finally {
+      setClaimDraftingId(null);
     }
   };
 
@@ -542,14 +563,24 @@ export default function ProjectLabPage() {
                     </Space>
                   )}
                   {project.status === "resume_ready" && (
-                    <Space direction="vertical" size={4}>
+                    <Space direction="vertical" size={6}>
                       <Typography.Text strong type="success">
-                        已达到可写入简历门槛；后续仍需显式转入事实台账，不会自动进入正式简历。
+                        已达到可写入简历门槛；仍需转入事实台账并再次确认，不会自动成为正式简历事实。
                       </Typography.Text>
                       <Typography.Text>掌握说明：{project.mastery_notes}</Typography.Text>
                       {project.resume_bullets.map((item) => (
                         <Typography.Text key={item}>简历表述：{item}</Typography.Text>
                       ))}
+                      <Typography.Text type="secondary">
+                        点击后只会创建「待确认」草稿；重复点击会复用已有草稿，不会复制多份。
+                      </Typography.Text>
+                      <Button
+                        type="primary"
+                        loading={claimDraftingId === project.id}
+                        onClick={() => void moveToClaimDrafts(project)}
+                      >
+                        转入事实台账待确认
+                      </Button>
                     </Space>
                   )}
                 </Space>

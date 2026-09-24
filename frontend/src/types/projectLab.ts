@@ -58,3 +58,10 @@ export interface ProjectLabPayload {
 }
 
 export type ProjectLabUpdatePayload = Partial<ProjectLabPayload>;
+
+export interface ProjectLabClaimDraftsResult {
+  project_id: number;
+  created_count: number;
+  existing_count: number;
+  claim_ids: number[];
+}
