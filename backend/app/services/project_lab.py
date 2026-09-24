@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from . import trash
 from ..models.job import Job
 from ..models.project_lab import (
+    PROJECT_LAB_STATUS_IMPLEMENTED,
     PROJECT_LAB_STATUS_RANK,
     PROJECT_LAB_STATUS_RESUME_READY,
     PROJECT_LAB_STATUS_VERIFIED,
@@ -23,9 +24,8 @@ def project_gate_warnings(project: ProjectLabProject) -> list[str]:
     warnings: list[str] = []
     rank = PROJECT_LAB_STATUS_RANK.get(project.status, 0)
 
-    if rank >= PROJECT_LAB_STATUS_RANK["implemented"]:
-        if not values["deliverables"]:
-            raise ValueError("进入 implemented 前必须记录至少一个实际交付物")
+    if rank >= PROJECT_LAB_STATUS_RANK[PROJECT_LAB_STATUS_IMPLEMENTED] and not project.deliverables:
+        warnings.append("已进入实现阶段，但还没有记录任何实际交付物")
 
     if rank >= PROJECT_LAB_STATUS_RANK[PROJECT_LAB_STATUS_VERIFIED]:
         if not project.evidence:
@@ -84,6 +84,10 @@ def _prospective(project: ProjectLabProject, values: dict) -> dict:
 
 def _validate_gates(values: dict) -> None:
     rank = PROJECT_LAB_STATUS_RANK[values["status"]]
+
+    if rank >= PROJECT_LAB_STATUS_RANK[PROJECT_LAB_STATUS_IMPLEMENTED]:
+        if not values["deliverables"]:
+            raise ValueError("进入 implemented 前必须记录至少一个实际交付物")
 
     if rank >= PROJECT_LAB_STATUS_RANK[PROJECT_LAB_STATUS_VERIFIED]:
         if not values["evidence"]:
