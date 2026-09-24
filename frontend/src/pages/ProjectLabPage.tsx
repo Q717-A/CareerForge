@@ -112,7 +112,6 @@ export default function ProjectLabPage() {
     }
   };
 
-
   const markImplemented = async (project: ProjectLabProject) => {
     const draft = deliverableDrafts[project.id] ?? "";
     const deliverables = Array.from(
