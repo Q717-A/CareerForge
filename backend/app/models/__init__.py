@@ -61,6 +61,11 @@ from .profile import (
     Skill,
     UserProfile,
 )
+from .project_lab import (
+    PROJECT_LAB_ORIGINS,
+    PROJECT_LAB_STATUSES,
+    ProjectLabProject,
+)
 from .question_bank_record import QuestionBankRecord
 from .referral import REFERRAL_STATUSES, Referral
 from .reminder import REMINDER_KINDS, REMINDER_STATUSES, Reminder
@@ -148,6 +153,9 @@ __all__ = [
     "InterviewReviewRecord",
     "KnowledgeEntry",
     "QuestionBankRecord",
+    "ProjectLabProject",
+    "PROJECT_LAB_STATUSES",
+    "PROJECT_LAB_ORIGINS",
     "Referral",
     "REFERRAL_STATUSES",
     "Reminder",
