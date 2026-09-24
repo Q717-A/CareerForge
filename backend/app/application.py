@@ -25,6 +25,7 @@ from .api import (
     knowledge,
     materials,
     profile,
+    project_lab,
     referrals,
     reminders,
     resume_risk,
@@ -140,6 +141,7 @@ def create_app() -> FastAPI:
         knowledge.router,
         candidate_jobs.router,
         claims.router,
+        project_lab.router,
         drill.router,
         # 历史路由必须排在 interview.router 之前：它用 /question-banks、/reviews 字面量段，
         # 排在后面会被 interview 的 /{session_id} 参数段抢走。

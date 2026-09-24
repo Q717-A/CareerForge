@@ -24,7 +24,7 @@ from app.services.data_backup import (
 
 # 投递功能出现之前的那一版 revision，用来伪造一份"旧版本导出的备份"。
 PREVIOUS_REVISION = "0009_templates_and_interview"
-HEAD_REVISION = "0021_candidate_additional_info"
+HEAD_REVISION = "0022_project_lab"
 APPLY_TABLES = ("job_match_analysis", "apply_queue_item", "apply_task", "apply_task_item")
 
 
@@ -84,9 +84,10 @@ def test_inspect_accepts_a_backup_exported_before_the_apply_tables(db_session, t
     preview = inspect_archive(old_archive, engine, tmp_path / "staging")
 
     assert preview["database"]["tables"]["job"] == 1
-    # 4 张新表由迁移补齐（空的），否则表集合校验会把它判成"不是 ResumeForge 的备份"。
+    # 旧备份缺失的后续业务表应全部由迁移补齐（空表），否则表集合校验会拒收。
     for name in APPLY_TABLES:
         assert preview["database"]["tables"][name] == 0
+    assert preview["database"]["tables"]["project_lab_project"] == 0
 
 
 def test_inspect_rejects_a_head_revision_backup_missing_the_apply_tables(db_session, tmp_path):

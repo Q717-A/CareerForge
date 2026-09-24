@@ -55,6 +55,7 @@ README_FEATURE_KEYS: dict[str, tuple[str, ...]] = {
     "资料箱": ("materials",),
     "AI 定制简历": ("resume_generate",),
     "自行编写简历": ("resume_manual",),
+    "项目实验室": ("project_lab",),
     "简历写作增强": ("writing_enhance", "version_diff"),
     "质量与合规检查": ("quality_check",),
     "简历历史": ("resume_history",),
