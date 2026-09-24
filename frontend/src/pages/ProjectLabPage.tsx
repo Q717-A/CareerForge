@@ -212,9 +212,11 @@ export default function ProjectLabPage() {
                     <Typography.Text strong>{project.title}</Typography.Text>
                     <Tag color={STATUS_COLORS[project.status]}>{STATUS_LABELS[project.status]}</Tag>
                   </Space>
-                  {job && (
+                  {project.target_job_id && (
                     <Typography.Text type="secondary">
-                      目标岗位：{job.company ? `${job.company} · ` : ""}{job.title}
+                      {job
+                        ? `目标岗位：${job.company ? `${job.company} · ` : ""}${job.title}`
+                        : `目标岗位：#${project.target_job_id}（已删除或未加载到当前岗位列表）`}
                     </Typography.Text>
                   )}
                   {project.gap_skills.length > 0 && (
