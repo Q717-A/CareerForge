@@ -179,5 +179,4 @@ describe("ProjectLabPage", () => {
     expect(await screen.findByText("已实现")).toBeInTheDocument();
     expect(screen.getByText("完成数据预处理脚本")).toBeInTheDocument();
   });
-
 });
