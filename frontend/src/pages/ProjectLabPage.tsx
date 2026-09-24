@@ -145,7 +145,7 @@ export default function ProjectLabPage() {
     } finally {
       setAdvancingId(null);
     }
-
+  };
 
   const markVerified = async (project: ProjectLabProject) => {
     const draft = verificationDrafts[project.id];
@@ -189,7 +189,6 @@ export default function ProjectLabPage() {
     } finally {
       setAdvancingId(null);
     }
-  };
   };
 
   return (
@@ -428,12 +427,3 @@ export default function ProjectLabPage() {
                   >
                     开始学习
                   </Button>
-                )}
-              </div>
-            </Card>
-          );
-        })}
-      </Space>
-    </div>
-  );
-}
