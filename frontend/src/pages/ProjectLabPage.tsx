@@ -8,7 +8,7 @@
 import { ExperimentOutlined, PlusOutlined } from "@ant-design/icons";
 import { App, Button, Card, Empty, Input, Select, Skeleton, Space, Tag, Typography } from "antd";
 import { useMemo, useState } from "react";
-import { listJobs } from "../api/jobs";
+import { getJobMatch, listJobs } from "../api/jobs";
 import {
   createProjectLabClaimDrafts,
   createProjectLabProject,
@@ -16,7 +16,7 @@ import {
   updateProjectLabProject,
 } from "../api/projectLab";
 import { useApi } from "../hooks/useApi";
-import type { ProjectLabProject } from "../types";
+import type { MatchCondition, ProjectLabProject } from "../types";
 
 const STATUS_LABELS: Record<ProjectLabProject["status"], string> = {
   proposed: "建议项目",
@@ -54,6 +54,11 @@ export default function ProjectLabPage() {
   const [title, setTitle] = useState("");
   const [targetJobId, setTargetJobId] = useState<number | undefined>();
   const [skills, setSkills] = useState("");
+  const [gapLoading, setGapLoading] = useState(false);
+  const [roleGaps, setRoleGaps] = useState<MatchCondition[]>([]);
+  const [evidenceGaps, setEvidenceGaps] = useState<MatchCondition[]>([]);
+  const [hardGaps, setHardGaps] = useState<MatchCondition[]>([]);
+  const [gapNotice, setGapNotice] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [advancingId, setAdvancingId] = useState<number | null>(null);
   const [claimDraftingId, setClaimDraftingId] = useState<number | null>(null);
@@ -83,6 +88,40 @@ export default function ProjectLabPage() {
     setTitle("");
     setTargetJobId(undefined);
     setSkills("");
+    setRoleGaps([]);
+    setEvidenceGaps([]);
+    setHardGaps([]);
+    setGapNotice("");
+  };
+
+  const readJobGaps = async (jobId: number) => {
+    setGapLoading(true);
+    setRoleGaps([]);
+    setEvidenceGaps([]);
+    setHardGaps([]);
+    setGapNotice("");
+    try {
+      const analysis = await getJobMatch(jobId);
+      if (analysis.id === 0) {
+        setGapNotice("这个岗位还没有匹配分析。请先到「岗位广场 → 匹配度分析」完成核对。");
+        return;
+      }
+      const conditions = [...analysis.result.core_abilities, ...analysis.result.bonus_items];
+      setRoleGaps(conditions.filter((item) => item.status === "real_gap"));
+      setEvidenceGaps(
+        conditions.filter(
+          (item) => item.status === "evidence_insufficient" || item.status === "to_confirm",
+        ),
+      );
+      setHardGaps(analysis.result.hard_conditions.filter((item) => item.status === "real_gap"));
+      if (!conditions.some((item) => item.status === "real_gap")) {
+        setGapNotice("分析中没有明确的可补强能力缺口。证据不足不等于不会，建议先核实资料。");
+      }
+    } catch (error) {
+      setGapNotice(error instanceof Error ? error.message : "读取岗位匹配分析失败");
+    } finally {
+      setGapLoading(false);
+    }
   };
 
   const create = async () => {
@@ -320,8 +359,53 @@ export default function ProjectLabPage() {
               loading={jobs.loading}
               value={targetJobId}
               options={jobOptions}
-              onChange={(value) => setTargetJobId(value)}
+              onChange={(value) => {
+                setTargetJobId(value);
+                setRoleGaps([]);
+                setEvidenceGaps([]);
+                setHardGaps([]);
+                setGapNotice("");
+              }}
             />
+            {targetJobId && (
+              <Space direction="vertical" style={{ width: "100%" }}>
+                <Button loading={gapLoading} onClick={() => void readJobGaps(targetJobId)}>
+                  从该岗位的匹配分析读取真实缺口
+                </Button>
+                {gapNotice && <Typography.Text type="secondary">{gapNotice}</Typography.Text>}
+                {hardGaps.length > 0 && (
+                  <Typography.Text type="warning">
+                    检测到 {hardGaps.length}{" "}
+                    项硬性条件不满足；学历、资质等硬门槛不能假定通过项目补齐。
+                  </Typography.Text>
+                )}
+                {roleGaps.map((gap, index) => (
+                  <Card key={`gap-${index}`} size="small">
+                    <Space direction="vertical" size={4}>
+                      <Typography.Text strong>真实能力缺口：{gap.label}</Typography.Text>
+                      {gap.jd_quote && (
+                        <Typography.Text type="secondary">招聘依据：{gap.jd_quote}</Typography.Text>
+                      )}
+                      <Button
+                        size="small"
+                        onClick={() => {
+                          setTitle(`岗位补强项目：${gap.label}`);
+                          setSkills(gap.label);
+                        }}
+                      >
+                        带入项目草稿（尚未完成）
+                      </Button>
+                    </Space>
+                  </Card>
+                ))}
+                {evidenceGaps.length > 0 && (
+                  <Typography.Text type="secondary">
+                    另有 {evidenceGaps.length}{" "}
+                    项证据不足或待确认：请先补证明材料，不自动当作能力缺口。
+                  </Typography.Text>
+                )}
+              </Space>
+            )}
             <Input
               aria-label="能力缺口"
               placeholder="能力缺口，用逗号分隔：Python，信号处理，1D-CNN"

@@ -15,6 +15,7 @@ const projectApi = vi.hoisted(() => ({
 }));
 
 const jobsApi = vi.hoisted(() => ({
+  getJobMatch: vi.fn(),
   listJobs: vi.fn(),
 }));
 
@@ -57,6 +58,7 @@ function renderPage() {
 beforeEach(() => {
   for (const mock of Object.values(projectApi)) mock.mockReset();
   jobsApi.listJobs.mockReset();
+  jobsApi.getJobMatch.mockReset();
   jobsApi.listJobs.mockResolvedValue({
     items: [
       {
@@ -317,5 +319,71 @@ describe("ProjectLabPage", () => {
       expect(projectApi.createProjectLabClaimDrafts).toHaveBeenCalledWith(1);
     });
     expect(await screen.findByText(/已生成 1 条待确认事实草稿/)).toBeInTheDocument();
+  });
+  it("never invents a project gap when job analysis is missing", async () => {
+    projectApi.listProjectLabProjects.mockResolvedValue([]);
+    jobsApi.getJobMatch.mockResolvedValue({
+      id: 0,
+      result: { hard_conditions: [], core_abilities: [], bonus_items: [] },
+    });
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: /新建补强项目/ }));
+    fireEvent.mouseDown(screen.getByRole("combobox", { name: "关联目标岗位" }));
+    fireEvent.click(await screen.findByText("示例公司 · 机械设计工程师"));
+    fireEvent.click(screen.getByRole("button", { name: "从该岗位的匹配分析读取真实缺口" }));
+    expect(await screen.findByText(/还没有匹配分析/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /带入项目草稿/ })).not.toBeInTheDocument();
+    expect(projectApi.createProjectLabProject).not.toHaveBeenCalled();
+  });
+
+  it("copies a confirmed real ability gap to a proposal only after user click", async () => {
+    projectApi.listProjectLabProjects.mockResolvedValue([]);
+    jobsApi.getJobMatch.mockResolvedValue({
+      id: 10,
+      result: {
+        hard_conditions: [
+          { label: "硕士学历", jd_quote: "硕士", evidence: "", status: "real_gap" },
+        ],
+        core_abilities: [
+          {
+            label: "机械动力学仿真",
+            jd_quote: "熟悉多体动力学",
+            evidence: "尚不具备",
+            status: "real_gap",
+          },
+          {
+            label: "Python",
+            jd_quote: "掌握 Python",
+            evidence: "材料不足",
+            status: "evidence_insufficient",
+          },
+        ],
+        bonus_items: [],
+      },
+    });
+    projectApi.createProjectLabProject.mockResolvedValue(project());
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: /新建补强项目/ }));
+    fireEvent.mouseDown(screen.getByRole("combobox", { name: "关联目标岗位" }));
+    fireEvent.click(await screen.findByText("示例公司 · 机械设计工程师"));
+    fireEvent.click(screen.getByRole("button", { name: "从该岗位的匹配分析读取真实缺口" }));
+
+    expect(await screen.findByText(/招聘依据：熟悉多体动力学/)).toBeInTheDocument();
+    expect(screen.getByText(/硬性条件不满足/)).toBeInTheDocument();
+    expect(screen.getByText(/证据不足或待确认/)).toBeInTheDocument();
+    expect(projectApi.createProjectLabProject).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "带入项目草稿（尚未完成）" }));
+    expect(screen.getByLabelText("项目名称")).toHaveValue("岗位补强项目：机械动力学仿真");
+    expect(screen.getByLabelText("能力缺口")).toHaveValue("机械动力学仿真");
+    fireEvent.click(screen.getByRole("button", { name: "保存项目" }));
+    await waitFor(() => {
+      expect(projectApi.createProjectLabProject).toHaveBeenCalledWith({
+        title: "岗位补强项目：机械动力学仿真",
+        origin: "job_gap",
+        target_job_id: 7,
+        gap_skills: ["机械动力学仿真"],
+      });
+    });
   });
 });
