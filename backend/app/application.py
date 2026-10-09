@@ -21,6 +21,7 @@ from .api import (
     interview_experiences,
     interview_history,
     job_match,
+    job_radar,
     jobs,
     knowledge,
     materials,
@@ -131,6 +132,7 @@ def create_app() -> FastAPI:
     for router in (
         jobs.router,
         job_match.router,
+        job_radar.router,
         resumes.router,
         resume_writing.router,
         resume_risk.router,

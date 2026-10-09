@@ -73,6 +73,57 @@ describe("JobFormModal", () => {
     );
   });
 
+  it("prefills a Radar candidate's source URL and JD for manual verification", async () => {
+    apiMocks.createJob.mockResolvedValue({ id: 77 });
+    const onSaved = vi.fn();
+    render(
+      <AntdApp>
+        <JobFormModal
+          open
+          initial={null}
+          presetSource="备选岗位导入"
+          presetRawText=""
+          presetCandidate={{
+            id: 11,
+            title: "机械设计工程师招聘",
+            company: "",
+            location: "",
+            salary: "",
+            raw_text: "",
+            images: [],
+            note: "网页搜索发现，岗位真实性及是否仍在招聘尚待人工确认。",
+            source: "联网搜索线索",
+            description: "招聘摘要，仅供线索参考",
+            requirements: "",
+            source_url: "https://careers.example.com/jobs/123",
+            collect_task_id: null,
+            status: "pending",
+            imported_job_id: null,
+            created_at: "2026-10-09T00:00:00",
+            updated_at: "2026-10-09T00:00:00",
+          }}
+          onClose={vi.fn()}
+          onSaved={onSaved}
+        />
+      </AntdApp>,
+    );
+
+    expect(screen.getByLabelText("职位名称")).toHaveValue("机械设计工程师招聘");
+    expect(screen.getByLabelText("职位描述（JD）")).toHaveValue("招聘摘要，仅供线索参考");
+    expect(screen.getByLabelText("投递链接")).toHaveValue("https://careers.example.com/jobs/123");
+
+    fireEvent.click(screen.getByRole("button", { name: /保\s*存/ }));
+    await waitFor(() => expect(apiMocks.createJob).toHaveBeenCalledOnce());
+    expect(apiMocks.createJob).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "机械设计工程师招聘",
+        source_url: "https://careers.example.com/jobs/123",
+        recognition_source: "备选岗位导入",
+      }),
+    );
+    expect(onSaved).toHaveBeenCalledWith(77);
+  });
+
   it("submits only once when the save button is activated repeatedly", async () => {
     const pending = deferredJob();
     apiMocks.createJob.mockReturnValue(pending.promise);
