@@ -103,7 +103,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - name: Focused UI tests
-        run: npm test -- src/pages/ProjectLabPage.test.tsx src/App.test.tsx --maxWorkers=2
+        run: npm test -- src/pages/ProjectLabPage.test.tsx src/pages/JobRadarPage.test.tsx src/App.test.tsx --maxWorkers=2
       - name: Typecheck
         run: npm run typecheck
       - name: Format check
