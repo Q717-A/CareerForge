@@ -1,5 +1,10 @@
 /** 岗位雷达：公开网页线索搜索与显式暂存。 */
-import type { RadarSearchRequest, RadarSearchOut, RadarHit, RadarStageOut } from "../types/jobRadar";
+import type {
+  RadarSearchRequest,
+  RadarSearchOut,
+  RadarHit,
+  RadarStageOut,
+} from "../types/jobRadar";
 import { request } from "./client";
 
 export function searchJobRadar(payload: RadarSearchRequest): Promise<RadarSearchOut> {

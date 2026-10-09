@@ -1,6 +1,18 @@
 /** 公开招聘网页线索 → 用户勾选 → 备选岗位，绝不自动写正式简历。 */
 import { RadarChartOutlined } from "@ant-design/icons";
-import { Alert, App, Button, Card, Checkbox, Empty, Input, Select, Space, Tag, Typography } from "antd";
+import {
+  Alert,
+  App,
+  Button,
+  Card,
+  Checkbox,
+  Empty,
+  Input,
+  Select,
+  Space,
+  Tag,
+  Typography,
+} from "antd";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { searchJobRadar, stageJobRadar } from "../api/jobRadar";
@@ -127,7 +139,12 @@ export default function JobRadarPage() {
         <Space direction="vertical" size={12} style={{ width: "100%" }}>
           <Space wrap>
             <Typography.Text>已选 {selected.length} 条</Typography.Text>
-            <Button type="primary" loading={staging} disabled={selected.length === 0} onClick={() => void stageSelected()}>
+            <Button
+              type="primary"
+              loading={staging}
+              disabled={selected.length === 0}
+              onClick={() => void stageSelected()}
+            >
               将勾选线索保存到备选岗位
             </Button>
           </Space>

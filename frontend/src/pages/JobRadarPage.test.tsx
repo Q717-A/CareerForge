@@ -47,14 +47,16 @@ describe("JobRadarPage", () => {
     expect(api.stageJobRadar).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("checkbox", { name: "选择线索：机械设计工程师招聘" }));
     fireEvent.click(screen.getByRole("button", { name: "将勾选线索保存到备选岗位" }));
-    await waitFor(() => expect(api.stageJobRadar).toHaveBeenCalledWith([
-      {
-        title: "机械设计工程师招聘",
-        url: "https://careers.example.com/jobs/123",
-        host: "careers.example.com",
-        snippet: "详情以官网为准",
-      },
-    ]));
+    await waitFor(() =>
+      expect(api.stageJobRadar).toHaveBeenCalledWith([
+        {
+          title: "机械设计工程师招聘",
+          url: "https://careers.example.com/jobs/123",
+          host: "careers.example.com",
+          snippet: "详情以官网为准",
+        },
+      ]),
+    );
   });
 
   it("shows source errors without fabricating job listings", async () => {
