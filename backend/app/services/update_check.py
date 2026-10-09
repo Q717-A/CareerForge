@@ -18,7 +18,7 @@ from ..schemas.update import UpdateCheckResult
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_REPOSITORY = "magicapple123/ResumeForge"
+DEFAULT_REPOSITORY = "Q717-A/CareerForge"
 REPOSITORY_ENV_VAR = "RESUMEFORGE_UPDATE_REPO"
 RELEASES_API = "https://api.github.com/repos/{repo}/releases/latest"
 RELEASES_PAGE = "https://github.com/{repo}/releases"
