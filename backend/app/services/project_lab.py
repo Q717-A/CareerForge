@@ -42,8 +42,8 @@ def project_gate_warnings(project: ProjectLabProject) -> list[str]:
         warnings.append("已进入实现阶段，但还没有记录任何实际交付物")
 
     if rank >= PROJECT_LAB_STATUS_RANK[PROJECT_LAB_STATUS_VERIFIED]:
-        if not project.evidence:
-            warnings.append("已进入验证阶段，但还没有任何证据来源")
+        if not any(str(item.get("location") or "").strip() for item in (project.evidence or [])):
+            warnings.append("已进入验证阶段，但还没有可定位的证据来源")
         if not (project.result_summary or "").strip():
             warnings.append("已进入验证阶段，但还没有结果总结")
 
@@ -104,8 +104,8 @@ def _validate_gates(values: dict) -> None:
             raise ValueError("进入 implemented 前必须记录至少一个实际交付物")
 
     if rank >= PROJECT_LAB_STATUS_RANK[PROJECT_LAB_STATUS_VERIFIED]:
-        if not values["evidence"]:
-            raise ValueError("进入 verified 前必须至少添加一条证据来源")
+        if not any(str(item.get("location") or "").strip() for item in (values["evidence"] or [])):
+            raise ValueError("进入 verified 前必须至少添加一条带有位置的证据来源")
         if not str(values["result_summary"] or "").strip():
             raise ValueError("进入 verified 前必须填写结果总结")
 
