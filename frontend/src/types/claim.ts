@@ -20,7 +20,13 @@ export const VERIFICATION_STATUSES = ["已确认", "待确认", "已过期", "�
 export type VerificationStatus = (typeof VERIFICATION_STATUSES)[number];
 
 /** 事实来源与可信度：null 表示历史数据尚未分级。 */
-export const TRUTH_STATUSES = ["VERIFIED", "REFRAMED", "INFERRED", "LEARNING", "UNVERIFIED"] as const;
+export const TRUTH_STATUSES = [
+  "VERIFIED",
+  "REFRAMED",
+  "INFERRED",
+  "LEARNING",
+  "UNVERIFIED",
+] as const;
 export type TruthStatus = (typeof TRUTH_STATUSES)[number];
 export const TRUTH_STATUS_LABELS: Record<TruthStatus, string> = {
   VERIFIED: "已核实事实",
