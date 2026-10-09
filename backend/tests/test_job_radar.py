@@ -1,6 +1,4 @@
 """Job Radar: search is read-only, staging is explicit and traceable."""
-import pytest
-
 from app.services.assistant.assistant_web_search import AssistantSearchError
 
 
