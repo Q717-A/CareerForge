@@ -8,6 +8,7 @@ export * from "./common";
 export * from "./claim";
 export * from "./drill";
 export * from "./profile";
+export * from "./projectLab";
 export * from "./job";
 export * from "./apply";
 export * from "./resume";

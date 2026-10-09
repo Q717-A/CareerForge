@@ -63,6 +63,7 @@ export const DEMO_ROUTES = [
   "/jobs",
   "/favorites",
   "/resumes",
+  "/project-lab",
   "/apply",
   "/tracker",
   "/analytics",

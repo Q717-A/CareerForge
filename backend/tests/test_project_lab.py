@@ -1,0 +1,268 @@
+"""CareerForge Project Lab 的核心闸门回归测试。"""
+
+
+def _create(client):
+    response = client.post(
+        "/api/project-lab",
+        json={
+            "title": "基于公开数据集的轴承故障诊断",
+            "origin": "job_gap",
+            "gap_skills": ["Python", "信号处理", "1D-CNN"],
+            "learning_plan": ["完成数据预处理", "训练传统模型", "训练 1D-CNN"],
+        },
+    )
+    assert response.status_code == 201
+    return response.json()
+
+
+def test_project_lab_cannot_skip_status(client):
+    project = _create(client)
+    response = client.patch(
+        f"/api/project-lab/{project['id']}",
+        json={"status": "implemented"},
+    )
+    assert response.status_code == 422
+    assert "不能跳级" in response.json()["detail"]
+
+
+def test_project_lab_verified_and_resume_ready_gates(client):
+    project = _create(client)
+    project_id = project["id"]
+
+    assert client.patch(
+        f"/api/project-lab/{project_id}", json={"status": "learning"}
+    ).status_code == 200
+    blocked_implemented = client.patch(
+        f"/api/project-lab/{project_id}", json={"status": "implemented"}
+    )
+    assert blocked_implemented.status_code == 422
+    assert "交付物" in blocked_implemented.json()["detail"]
+
+    implemented = client.patch(
+        f"/api/project-lab/{project_id}",
+        json={
+            "status": "implemented",
+            "deliverables": ["完成可复现的数据预处理与模型训练脚本"],
+        },
+    )
+    assert implemented.status_code == 200
+
+    blocked = client.patch(
+        f"/api/project-lab/{project_id}", json={"status": "verified"}
+    )
+    assert blocked.status_code == 422
+    assert "证据" in blocked.json()["detail"]
+
+    verified = client.patch(
+        f"/api/project-lab/{project_id}",
+        json={
+            "status": "verified",
+            "evidence": [
+                {
+                    "type": "repository",
+                    "location": "https://github.com/example/project",
+                    "note": "代码与实验记录",
+                }
+            ],
+            "result_summary": "完成传统模型与 1D-CNN 对比实验，并保存可复现实验结果。",
+        },
+    )
+    assert verified.status_code == 200
+    assert verified.json()["status"] == "verified"
+
+    blocked_ready = client.patch(
+        f"/api/project-lab/{project_id}", json={"status": "resume_ready"}
+    )
+    assert blocked_ready.status_code == 422
+    assert "掌握说明" in blocked_ready.json()["detail"]
+
+    ready = client.patch(
+        f"/api/project-lab/{project_id}",
+        json={
+            "status": "resume_ready",
+            "mastery_notes": "能够解释数据预处理、FFT 特征、基线模型与 1D-CNN 的差异。",
+            "resume_bullets": [
+                "基于公开轴承数据完成故障诊断实验，对比传统模型与 1D-CNN。"
+            ],
+            "interview_questions": [
+                "为什么使用 1D-CNN，而不是直接使用二维时频图？"
+            ],
+        },
+    )
+    assert ready.status_code == 200
+    assert ready.json()["status"] == "resume_ready"
+    assert ready.json()["gate_warnings"] == []
+
+
+def test_project_lab_list_filter(client):
+    project = _create(client)
+    response = client.get("/api/project-lab", params={"status": "proposed"})
+    assert response.status_code == 200
+    assert [item["id"] for item in response.json()] == [project["id"]]
+
+def test_project_lab_crud_smoke(client):
+    project = _create(client)
+    project_id = project["id"]
+
+    fetched = client.get(f"/api/project-lab/{project_id}")
+    assert fetched.status_code == 200
+    assert fetched.json()["title"] == "基于公开数据集的轴承故障诊断"
+
+    updated = client.patch(
+        f"/api/project-lab/{project_id}",
+        json={
+            "problem_statement": "验证公开轴承数据上的故障识别流程。",
+            "target_roles": ["故障诊断算法工程师"],
+        },
+    )
+    assert updated.status_code == 200
+    assert updated.json()["problem_statement"] == "验证公开轴承数据上的故障识别流程。"
+
+    removed = client.delete(f"/api/project-lab/{project_id}")
+    assert removed.status_code == 204
+    assert client.get(f"/api/project-lab/{project_id}").status_code == 404
+
+
+def test_project_lab_unknown_status_is_rejected(client):
+    response = client.get("/api/project-lab", params={"status": "done"})
+    assert response.status_code == 422
+
+def test_project_lab_links_only_to_live_jobs(client):
+    job_response = client.post(
+        "/api/jobs",
+        json={
+            "title": "机械设计工程师",
+            "company": "示例公司",
+            "description": "负责机构设计与三维建模。",
+        },
+    )
+    assert job_response.status_code == 201
+    job_id = job_response.json()["id"]
+
+    linked = client.post(
+        "/api/project-lab",
+        json={
+            "title": "机械结构仿真补强项目",
+            "origin": "job_gap",
+            "target_job_id": job_id,
+        },
+    )
+    assert linked.status_code == 201
+    assert linked.json()["target_job_id"] == job_id
+
+    assert client.delete(f"/api/jobs/{job_id}").status_code == 204
+
+    rejected = client.post(
+        "/api/project-lab",
+        json={
+            "title": "不应关联到已删除岗位",
+            "origin": "job_gap",
+            "target_job_id": job_id,
+        },
+    )
+    assert rejected.status_code == 422
+    assert "岗位不存在或已被删除" in rejected.json()["detail"]
+
+
+def test_project_lab_rejects_unknown_job_id(client):
+    response = client.post(
+        "/api/project-lab",
+        json={
+            "title": "无效关联",
+            "origin": "job_gap",
+            "target_job_id": 999999,
+        },
+    )
+    assert response.status_code == 422
+    assert "岗位不存在或已被删除" in response.json()["detail"]
+
+def _advance_to_resume_ready(client, project_id: int, *, bullets: list[str] | None = None):
+    assert client.patch(
+        f"/api/project-lab/{project_id}", json={"status": "learning"}
+    ).status_code == 200
+    assert client.patch(
+        f"/api/project-lab/{project_id}",
+        json={
+            "status": "implemented",
+            "deliverables": ["完成可复现的数据预处理与模型训练脚本"],
+        },
+    ).status_code == 200
+    assert client.patch(
+        f"/api/project-lab/{project_id}",
+        json={
+            "status": "verified",
+            "evidence": [
+                {
+                    "type": "repository",
+                    "location": "https://github.com/example/project",
+                    "note": "代码与实验记录",
+                }
+            ],
+            "result_summary": "完成传统模型与 1D-CNN 对比实验，并保存可复现实验结果。",
+        },
+    ).status_code == 200
+    response = client.patch(
+        f"/api/project-lab/{project_id}",
+        json={
+            "status": "resume_ready",
+            "mastery_notes": "能够解释数据预处理、基线模型与 1D-CNN 的差异。",
+            "resume_bullets": bullets
+            or ["基于公开轴承数据完成故障诊断实验，对比传统模型与 1D-CNN。"],
+            "interview_questions": ["为什么选择 1D-CNN？"],
+        },
+    )
+    assert response.status_code == 200
+    return response.json()
+
+
+def test_project_lab_claim_drafts_require_resume_ready(client):
+    project = _create(client)
+    response = client.post(f"/api/project-lab/{project['id']}/claim-drafts")
+    assert response.status_code == 422
+    assert "resume_ready" in response.json()["detail"]
+    assert client.get("/api/claims").json()["total"] == 0
+
+
+def test_project_lab_claim_drafts_are_pending_traceable_and_idempotent(client):
+    project = _create(client)
+    project_id = project["id"]
+    _advance_to_resume_ready(
+        client,
+        project_id,
+        bullets=[
+            "基于公开轴承数据完成故障诊断实验，对比传统模型与 1D-CNN。",
+            "建立可复现实验流程并保存模型训练结果。",
+        ],
+    )
+
+    first = client.post(f"/api/project-lab/{project_id}/claim-drafts")
+    assert first.status_code == 200
+    assert first.json()["created_count"] == 2
+    assert first.json()["existing_count"] == 0
+    assert len(first.json()["claim_ids"]) == 2
+
+    claims = client.get("/api/claims").json()
+    assert claims["total"] == 2
+    assert claims["confirmed_count"] == 0
+    assert claims["pending_count"] == 2
+    for item in claims["items"]:
+        assert item["category"] == "项目经历"
+        assert item["subject"] == "基于公开数据集的轴承故障诊断"
+        assert item["verification_status"] == "待确认"
+        assert "【待确认" in item["candidate_wording"]
+        assert "【待补" in item["boundary"]
+        locations = [source["location"] for source in item["sources"]]
+        assert any(location.startswith(f"project-lab://project/{project_id}/") for location in locations)
+        assert "https://github.com/example/project" in locations
+
+    baseline = client.get("/api/claims/baseline").json()
+    assert baseline["confirmed_count"] == 0
+    assert len(baseline["blocked_wording"]) == 2
+
+    second = client.post(f"/api/project-lab/{project_id}/claim-drafts")
+    assert second.status_code == 200
+    assert second.json()["created_count"] == 0
+    assert second.json()["existing_count"] == 2
+    assert second.json()["claim_ids"] == first.json()["claim_ids"]
+    assert client.get("/api/claims").json()["total"] == 2
+
