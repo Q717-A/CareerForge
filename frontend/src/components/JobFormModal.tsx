@@ -41,6 +41,8 @@ interface Props {
   open: boolean;
   /** 传入岗位表示编辑，null 表示新增 */
   initial: Job | null;
+  /** 保存过的候选岗位的结构化信息；人工确认后才创建正式岗位。 */
+  presetCandidate?: CandidateJob | null;
   /** 从备选岗位导入时预填的招聘原文（只用于新增）。 */
   presetRawText?: string;
   /** 从备选岗位导入时的来源标注；不填则按识别输入自动判定。 */
@@ -69,6 +71,7 @@ const RECOGNIZED_CONTENT_FIELDS = [
 export default function JobFormModal({
   open,
   initial,
+  presetCandidate,
   presetRawText,
   presetSource,
   onClose,
@@ -109,6 +112,18 @@ export default function JobFormModal({
       setNoteImages(initial.note_images ?? []);
     } else {
       form.resetFields();
+      if (presetCandidate) {
+        form.setFieldsValue({
+          title: presetCandidate.title,
+          company: presetCandidate.company,
+          location: presetCandidate.location,
+          salary: presetCandidate.salary,
+          description: presetCandidate.description || presetCandidate.raw_text,
+          requirements: presetCandidate.requirements,
+          source_url: presetCandidate.source_url,
+          note: presetCandidate.note,
+        });
+      }
       setRawText(presetRawText ?? "");
       setParseWarnings([]);
       setRecognizedText("");
@@ -117,7 +132,7 @@ export default function JobFormModal({
       setNoteImages([]);
       clear();
     }
-  }, [open, initial, presetRawText, form, clear]);
+  }, [open, initial, presetCandidate, presetRawText, form, clear]);
 
   const addNoteImage = async (file: File) => {
     if (file.size > MAX_NOTE_IMAGE_BYTES) {

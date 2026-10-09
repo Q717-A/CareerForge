@@ -491,6 +491,7 @@ export default function JobsPage() {
         initial={editingJob}
         // 从备选岗位导入时，把原文预填进表单并标注来源。
         presetRawText={importCandidate?.raw_text ?? ""}
+        presetCandidate={importCandidate}
         presetSource={importCandidate ? "备选岗位导入" : undefined}
         onClose={() => {
           setFormOpen(false);
