@@ -442,11 +442,8 @@ def test_deleted_claims_never_reach_the_resume_baseline(db_session):
     assert baseline.warnings == []
 
     from app.services import trash
-    from app.models.claim import ClaimRecord
 
-    trashed = db_session.get(ClaimRecord, confirmed.id)
-    trash.restore(db_session, "claim", trashed)
-    db_session.commit()
+    assert trash.restore(db_session, "claim", confirmed.id)
 
     restored = build_baseline(db_session)
     assert restored.confirmed_count == 1
