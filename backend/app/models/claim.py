@@ -65,7 +65,18 @@ _VERIFICATION_ICONS = {
     VERIFICATION_REJECTED: "✕",
 }
 
-# ===== ③ 分类：与个人资料库的区块对齐，便于把资料一键转成台账草稿 =====
+# ===== ③ CareerForge 事实可信等级（与旧的核实状态独立） =====
+TRUTH_VERIFIED = "VERIFIED"
+TRUTH_REFRAMED = "REFRAMED"
+TRUTH_INFERRED = "INFERRED"
+TRUTH_LEARNING = "LEARNING"
+TRUTH_UNVERIFIED = "UNVERIFIED"
+TRUTH_STATUSES = (
+    TRUTH_VERIFIED, TRUTH_REFRAMED, TRUTH_INFERRED, TRUTH_LEARNING, TRUTH_UNVERIFIED
+)
+TRUTH_BLOCKED_FROM_FINAL = frozenset({TRUTH_INFERRED, TRUTH_LEARNING, TRUTH_UNVERIFIED})
+
+# ===== ④ 分类：与个人资料库的区块对齐，便于把资料一键转成台账草稿 =====
 CLAIM_CATEGORY_EDUCATION = "教育经历"
 CLAIM_CATEGORY_EXPERIENCE = "实习/工作"
 CLAIM_CATEGORY_PROJECT = "项目经历"
@@ -149,6 +160,8 @@ class ClaimRecord(Base):
     verification_status: Mapped[str] = mapped_column(
         String(16), default=VERIFICATION_PENDING, index=True
     )
+    # NULL = 历史数据尚未评级，不做无依据的自动背书。
+    truth_status: Mapped[str | None] = mapped_column(String(16), nullable=True, index=True)
     # 可用范围：这条主张能用在哪些材料里（某岗位版本 / 开场白 / 自我介绍）。空表示不限。
     allowed_uses: Mapped[list[str]] = mapped_column(JSON, default=list)
     # {"decisions": [], "difficulties": [], "verification": [], "result": null}
@@ -177,6 +190,13 @@ __all__ = [
     "CLAIM_CATEGORY_PROJECT",
     "CLAIM_CATEGORY_SKILL",
     "ClaimRecord",
+    "TRUTH_STATUSES",
+    "TRUTH_BLOCKED_FROM_FINAL",
+    "TRUTH_VERIFIED",
+    "TRUTH_REFRAMED",
+    "TRUTH_INFERRED",
+    "TRUTH_LEARNING",
+    "TRUTH_UNVERIFIED",
     "PLACEHOLDER_MARKERS",
     "PLACEHOLDER_PREFIX",
     "RESPONSIBILITY_LEVELS",
