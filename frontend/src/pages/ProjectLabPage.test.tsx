@@ -378,12 +378,43 @@ describe("ProjectLabPage", () => {
     expect(screen.getByLabelText("能力缺口")).toHaveValue("机械动力学仿真");
     fireEvent.click(screen.getByRole("button", { name: "保存项目" }));
     await waitFor(() => {
-      expect(projectApi.createProjectLabProject).toHaveBeenCalledWith({
-        title: "岗位补强项目：机械动力学仿真",
-        origin: "job_gap",
-        target_job_id: 7,
-        gap_skills: ["机械动力学仿真"],
-      });
+      expect(projectApi.createProjectLabProject).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "岗位补强项目：机械动力学仿真",
+          origin: "job_gap",
+          target_job_id: 7,
+          gap_skills: ["机械动力学仿真"],
+          problem_statement: "岗位要求：熟悉多体动力学\n待学习能力：机械动力学仿真",
+          learning_plan: expect.arrayContaining([
+            expect.stringContaining("机械动力学仿真"),
+            expect.stringContaining("对照实验"),
+          ]),
+        }),
+      );
     });
   });
+  it("persists an edited learning plan without pretending the project was implemented", async () => {
+    const learning = project({
+      status: "learning",
+      learning_plan: ["阅读动力学基础"],
+      deliverables: [],
+    });
+    projectApi.listProjectLabProjects.mockResolvedValue([learning]);
+    projectApi.updateProjectLabProject.mockResolvedValue(learning);
+    renderPage();
+    fireEvent.change(await screen.findByLabelText("项目 1 学习路线"), {
+      target: { value: "查阅动力学参考资料\n完成简化机构建模" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "保存学习路线" }));
+    await waitFor(() => {
+      expect(projectApi.updateProjectLabProject).toHaveBeenCalledWith(1, {
+        learning_plan: ["查阅动力学参考资料", "完成简化机构建模"],
+      });
+    });
+    expect(projectApi.updateProjectLabProject).not.toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ status: "implemented" }),
+    );
+  });
+
 });

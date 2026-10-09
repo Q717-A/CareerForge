@@ -266,3 +266,21 @@ def test_project_lab_claim_drafts_are_pending_traceable_and_idempotent(client):
     assert second.json()["claim_ids"] == first.json()["claim_ids"]
     assert client.get("/api/claims").json()["total"] == 2
 
+
+def test_learning_plan_is_not_implementation_evidence(client):
+    response = client.post(
+        "/api/project-lab",
+        json={
+            "title": "机械结构学习计划",
+            "origin": "job_gap",
+            "problem_statement": "学习基础动力学与结构仿真方法",
+            "learning_plan": ["完成基础知识学习", "准备最小样例"],
+        },
+    )
+    assert response.status_code == 201
+    entry = response.json()
+    assert entry["status"] == "proposed"
+    assert entry["learning_plan"] == ["完成基础知识学习", "准备最小样例"]
+    assert client.patch(
+        f"/api/project-lab/{entry['id']}", json={"status": "implemented"}
+    ).status_code == 422

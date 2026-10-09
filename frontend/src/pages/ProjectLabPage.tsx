@@ -34,6 +34,21 @@ const STATUS_COLORS: Record<ProjectLabProject["status"], string> = {
   resume_ready: "purple",
 };
 
+function splitPlan(value: string): string[] {
+  return Array.from(new Set(value.split("\n").map((step) => step.trim()).filter(Boolean)));
+}
+
+function suggestedLearningPlan(gap: string): string[] {
+  return [
+    `梳理「${gap}」的基础概念、常见应用与核心知识点，记录学习资料出处`,
+    `选择与「${gap}」相关的公开案例，定义一个可实测的问题和验收标准`,
+    "搭建最小可复现的基础方案，保存源代码、设计文件或实验步骤",
+    "在基础方案上完成至少一次对照实验，记录参数、观察结果与失败情况",
+    "复核结果、注明限制与误差来源，整理报告及可回溯证据",
+    "练习解释关键技术决策、自己的实际承担范围以及可能的面试追问",
+  ];
+}
+
 function splitSkills(value: string): string[] {
   return Array.from(
     new Set(
@@ -54,6 +69,10 @@ export default function ProjectLabPage() {
   const [title, setTitle] = useState("");
   const [targetJobId, setTargetJobId] = useState<number | undefined>();
   const [skills, setSkills] = useState("");
+  const [problemStatement, setProblemStatement] = useState("");
+  const [learningPlan, setLearningPlan] = useState("");
+  const [learningPlanDrafts, setLearningPlanDrafts] = useState<Record<number, string>>({});
+  const [savingPlanId, setSavingPlanId] = useState<number | null>(null);
   const [gapLoading, setGapLoading] = useState(false);
   const [roleGaps, setRoleGaps] = useState<MatchCondition[]>([]);
   const [evidenceGaps, setEvidenceGaps] = useState<MatchCondition[]>([]);
@@ -88,6 +107,8 @@ export default function ProjectLabPage() {
     setTitle("");
     setTargetJobId(undefined);
     setSkills("");
+    setProblemStatement("");
+    setLearningPlan("");
     setRoleGaps([]);
     setEvidenceGaps([]);
     setHardGaps([]);
@@ -136,6 +157,8 @@ export default function ProjectLabPage() {
         origin: targetJobId ? "job_gap" : "manual",
         target_job_id: targetJobId ?? null,
         gap_skills: splitSkills(skills),
+        ...(problemStatement.trim() ? { problem_statement: problemStatement.trim() } : {}),
+        ...(learningPlan.trim() ? { learning_plan: splitPlan(learningPlan) } : {}),
       });
       message.success("项目已创建，当前仍是「建议项目」状态");
       resetCreate();
@@ -144,6 +167,25 @@ export default function ProjectLabPage() {
       message.error(error instanceof Error ? error.message : "创建失败");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const saveLearningPlan = async (project: ProjectLabProject) => {
+    const draft = learningPlanDrafts[project.id] ?? project.learning_plan.join("\n");
+    const steps = splitPlan(draft);
+    if (steps.length === 0) {
+      message.warning("学习路径至少应包含一个具体步骤");
+      return;
+    }
+    setSavingPlanId(project.id);
+    try {
+      await updateProjectLabProject(project.id, { learning_plan: steps });
+      message.success("学习路线已保存；这不代表项目已经完成");
+      await projects.reload();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "学习路线保存失败");
+    } finally {
+      setSavingPlanId(null);
     }
   };
 
@@ -391,6 +433,10 @@ export default function ProjectLabPage() {
                         onClick={() => {
                           setTitle(`岗位补强项目：${gap.label}`);
                           setSkills(gap.label);
+                          setProblemStatement(
+                            `岗位要求：${gap.jd_quote || gap.label}\n待学习能力：${gap.label}`,
+                          );
+                          setLearningPlan(suggestedLearningPlan(gap.label).join("\n"));
                         }}
                       >
                         带入项目草稿（尚未完成）
@@ -411,6 +457,20 @@ export default function ProjectLabPage() {
               placeholder="能力缺口，用逗号分隔：Python，信号处理，1D-CNN"
               value={skills}
               onChange={(event) => setSkills(event.target.value)}
+            />
+            <Input.TextArea
+              aria-label="项目问题与目标"
+              placeholder="准备解决的技术问题，必须写成目标而非已完成业绩"
+              autoSize={{ minRows: 2, maxRows: 4 }}
+              value={problemStatement}
+              onChange={(event) => setProblemStatement(event.target.value)}
+            />
+            <Input.TextArea
+              aria-label="学习路线（每行一步）"
+              placeholder="每行一个可执行的学习步骤，可按自身掌握情况修改"
+              autoSize={{ minRows: 3, maxRows: 8 }}
+              value={learningPlan}
+              onChange={(event) => setLearningPlan(event.target.value)}
             />
             <Space>
               <Button type="primary" loading={submitting} onClick={() => void create()}>
@@ -462,8 +522,42 @@ export default function ProjectLabPage() {
                       ))}
                     </Space>
                   )}
+                  {project.problem_statement && (
+                    <Typography.Text type="secondary">
+                      项目问题与目标：{project.problem_statement}
+                    </Typography.Text>
+                  )}
+                  {(project.status === "proposed" || project.status === "learning") &&
+                    project.learning_plan.length > 0 && (
+                      <Space direction="vertical" size={2}>
+                        <Typography.Text strong>学习路线（计划，不是完成记录）</Typography.Text>
+                        <ol style={{ margin: "4px 0 8px", paddingLeft: 20 }}>
+                          {project.learning_plan.map((step, index) => (
+                            <li key={index}>{step}</li>
+                          ))}
+                        </ol>
+                      </Space>
+                    )}
                   {project.status === "learning" && (
                     <Space direction="vertical" size={6} style={{ width: "100%" }}>
+                      <Input.TextArea
+                        aria-label={`项目 ${project.id} 学习路线`}
+                        placeholder="每行一步，可根据真实进展调整"
+                        autoSize={{ minRows: 2, maxRows: 6 }}
+                        value={learningPlanDrafts[project.id] ?? project.learning_plan.join("\n")}
+                        onChange={(event) =>
+                          setLearningPlanDrafts((current) => ({
+                            ...current,
+                            [project.id]: event.target.value,
+                          }))
+                        }
+                      />
+                      <Button
+                        loading={savingPlanId === project.id}
+                        onClick={() => void saveLearningPlan(project)}
+                      >
+                        保存学习路线
+                      </Button>
                       <Typography.Text type="secondary">
                         学习完成后，先记录你真实产出的交付物，再进入「已实现」。不能一键跳过。
                       </Typography.Text>
