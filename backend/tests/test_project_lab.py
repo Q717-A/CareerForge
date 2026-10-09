@@ -249,6 +249,7 @@ def test_project_lab_claim_drafts_are_pending_traceable_and_idempotent(client):
         assert item["category"] == "项目经历"
         assert item["subject"] == "基于公开数据集的轴承故障诊断"
         assert item["verification_status"] == "待确认"
+        assert item["truth_status"] == "UNVERIFIED"
         assert "【待确认" in item["candidate_wording"]
         assert "【待补" in item["boundary"]
         locations = [source["location"] for source in item["sources"]]

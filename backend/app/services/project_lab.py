@@ -11,6 +11,7 @@ from ..models.claim import (
     CLAIM_CATEGORY_PROJECT,
     RESPONSIBILITY_PARTICIPATED,
     VERIFICATION_PENDING,
+    TRUTH_UNVERIFIED,
     ClaimRecord,
 )
 from ..models.job import Job
@@ -227,6 +228,7 @@ def create_claim_drafts_from_project(
             sources=_project_claim_sources(project, marker),
             responsibility_level=RESPONSIBILITY_PARTICIPATED,
             verification_status=VERIFICATION_PENDING,
+            truth_status=TRUTH_UNVERIFIED,
             allowed_uses=[],
             interview_details={
                 "decisions": [],

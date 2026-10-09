@@ -44,7 +44,7 @@ proposed → learning → implemented → verified → resume_ready
 
 ## V1.1 — Truth Engine
 
-- [ ] VERIFIED / REFRAMED / INFERRED / LEARNING / UNVERIFIED；
+- [ ] VERIFIED / REFRAMED / INFERRED / LEARNING / UNVERIFIED（数据、API、前端编辑已实现，等待 CI 与人工联调；参见 [TRUTH_ENGINE.md](TRUTH_ENGINE.md)）；
 - [ ] 简历句子与事实台账建立可追踪引用；
 - [ ] 数字成果、公司、学校、项目名、技术栈采用更严格的生成闸门；
 - [ ] UNVERIFIED / LEARNING 默认禁止进入最终导出；

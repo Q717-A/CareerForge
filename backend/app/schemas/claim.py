@@ -21,6 +21,9 @@ from ..models.claim import (
     CLAIM_CATEGORIES,
     CLAIM_CATEGORY_OTHER,
     RESPONSIBILITY_LEVELS,
+    TRUTH_BLOCKED_FROM_FINAL,
+    TRUTH_REFRAMED,
+    TRUTH_STATUSES,
     VERIFICATION_CONFIRMED,
     VERIFICATION_STATUSES,
     has_placeholder,
@@ -119,6 +122,7 @@ class ClaimBase(BaseModel):
     sources: list[ClaimSource] = Field(default_factory=list, max_length=MAX_CLAIM_SOURCES)
     responsibility_level: str = Field(default=RESPONSIBILITY_LEVELS[0], max_length=32)
     verification_status: str = Field(default=VERIFICATION_STATUSES[1], max_length=16)
+    truth_status: str | None = Field(default=None, max_length=16)
     allowed_uses: list[str] = Field(default_factory=list, max_length=MAX_CLAIM_ALLOWED_USES)
     interview_details: dict[str, Any] = Field(default_factory=dict)
     boundary: str = Field(default="", max_length=MAX_CLAIM_BOUNDARY_CHARS)
@@ -148,6 +152,13 @@ class ClaimBase(BaseModel):
         if cleaned not in VERIFICATION_STATUSES:
             raise ValueError(f"未知的核实状态「{cleaned}」")
         return cleaned
+
+    @field_validator("truth_status")
+    @classmethod
+    def truth_status_must_be_supported(cls, value: str | None) -> str | None:
+        if value is not None and value not in TRUTH_STATUSES:
+            raise ValueError("未知的事实可信等级")
+        return value
 
     @field_validator("last_verified")
     @classmethod
@@ -210,6 +221,21 @@ class ClaimBase(BaseModel):
         self.boundary = self.boundary.strip()
         if not self.source_fact and not self.candidate_wording:
             raise ValueError("请至少填写原始事实或简历表述之一")
+        return self
+
+    @model_validator(mode="after")
+    def truth_grade_requires_real_evidence(self) -> "ClaimBase":
+        if self.truth_status == TRUTH_REFRAMED and (
+            not self.source_fact or not self.candidate_wording
+        ):
+            raise ValueError("REFRAMED 必须同时保留原始事实和改写后的表述")
+        if self.verification_status == VERIFICATION_CONFIRMED:
+            if self.truth_status in TRUTH_BLOCKED_FROM_FINAL:
+                raise ValueError("推断、学习中或未验证的经历不能标记为已确认")
+            if self.truth_status is not None and not any(
+                source.location.strip() for source in self.sources
+            ):
+                raise ValueError("已评级事实必须先登记证据来源，才能标记为已确认")
         return self
 
     @model_validator(mode="after")

@@ -33,6 +33,8 @@ import {
   SOURCE_TYPE_LABELS,
   VERIFICATION_STATUSES,
   VERIFICATION_STATUS_HINTS,
+  TRUTH_STATUSES,
+  TRUTH_STATUS_LABELS,
   emptyClaim,
 } from "../../types";
 
@@ -62,6 +64,7 @@ interface FormValues {
   candidate_wording: string;
   responsibility_level: string;
   verification_status: string;
+  truth_status: string | null;
   boundary: string;
   last_verified: string;
   allowed_uses: string[];
@@ -81,6 +84,7 @@ const EMPTY_VALUES: FormValues = {
   candidate_wording: "",
   responsibility_level: "参与",
   verification_status: "待确认",
+  truth_status: null,
   boundary: "",
   last_verified: "",
   allowed_uses: [],
@@ -115,6 +119,7 @@ function toValues(claim: Claim): FormValues {
     candidate_wording: claim.candidate_wording,
     responsibility_level: claim.responsibility_level,
     verification_status: claim.verification_status,
+    truth_status: claim.truth_status,
     boundary: claim.boundary,
     last_verified: claim.last_verified,
     allowed_uses: claim.allowed_uses,
@@ -137,6 +142,7 @@ function toPayload(values: FormValues): ClaimPayload {
     candidate_wording: values.candidate_wording.trim(),
     responsibility_level: values.responsibility_level as ClaimPayload["responsibility_level"],
     verification_status: values.verification_status as ClaimPayload["verification_status"],
+    truth_status: values.truth_status as ClaimPayload["truth_status"],
     boundary: values.boundary.trim(),
     last_verified: values.last_verified.trim(),
     allowed_uses: values.allowed_uses ?? [],
@@ -270,6 +276,21 @@ export default function ClaimFormModal({ open, claim, onClose, onSaved }: Props)
             <DatePicker style={{ width: "100%" }} />
           </Form.Item>
         </div>
+
+        <Form.Item
+          name="truth_status"
+          label="事实可信等级"
+          extra="独立于核实状态：推断、学习中和未验证的内容不能标记已确认。历史记录留空表示尚未分级。"
+        >
+          <Select
+            allowClear
+            placeholder="历史数据尚未分级"
+            options={TRUTH_STATUSES.map((value) => ({
+              value,
+              label: `${value} · ${TRUTH_STATUS_LABELS[value]}`,
+            }))}
+          />
+        </Form.Item>
 
         <Form.Item
           name="boundary"

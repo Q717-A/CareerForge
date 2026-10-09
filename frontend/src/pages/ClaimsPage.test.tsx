@@ -34,6 +34,7 @@ function makeClaim(overrides: Partial<Claim> = {}): Claim {
     sources: [],
     responsibility_level: "参与",
     verification_status: "待确认",
+    truth_status: null,
     allowed_uses: [],
     interview_details: { decisions: [], difficulties: [], verification: [], result: null },
     boundary: "",

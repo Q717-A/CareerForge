@@ -22,6 +22,7 @@ from ..models.claim import (
     CLAIM_CATEGORIES,
     RESPONSIBILITY_PARTICIPATED,
     STRONG_RESPONSIBILITY_LEVELS,
+    TRUTH_BLOCKED_FROM_FINAL,
     VERIFICATION_CONFIRMED,
     VERIFICATION_EXPIRED,
     VERIFICATION_PENDING,
@@ -102,6 +103,7 @@ def _apply_payload(record: ClaimRecord, payload: ClaimCreate | ClaimUpdate) -> N
     record.sources = [item.model_dump() for item in payload.sources]
     record.responsibility_level = payload.responsibility_level
     record.verification_status = payload.verification_status
+    record.truth_status = payload.truth_status
     record.allowed_uses = list(payload.allowed_uses)
     record.interview_details = dict(payload.interview_details)
     record.boundary = payload.boundary
@@ -160,6 +162,8 @@ def claim_warnings(record: ClaimRecord) -> list[str]:
     """把"这样写会在面试里出问题"的规则集中在这里。返回面向用户的中文建议。"""
     warnings: list[str] = []
     status = record.verification_status
+    if record.truth_status in TRUTH_BLOCKED_FROM_FINAL:
+        warnings.append("该内容仍是推断、学习中或未验证，不能作为正式简历事实")
 
     if record.responsibility_level in STRONG_RESPONSIBILITY_LEVELS and not _has_interview_details(
         record.interview_details
@@ -227,6 +231,7 @@ def claim_brief(record: ClaimRecord) -> dict[str, Any]:
         "分类": record.category,
         "主体": record.subject,
         "核实状态": record.verification_status,
+        "事实等级": record.truth_status,
         "承担程度": record.responsibility_level,
         "原始事实": (record.source_fact or "")[:200],
         "简历表述": (record.candidate_wording or "")[:200],
@@ -275,7 +280,7 @@ def build_baseline(db: Session) -> ClaimDigestOut:
     blocked: list[str] = []
     warnings: list[str] = []
     for record in records:
-        if can_enter_final(record.verification_status):
+        if can_enter_final(record.verification_status) and record.truth_status not in TRUTH_BLOCKED_FROM_FINAL:
             entry = {
                 "subject": record.subject or record.title,
                 "category": record.category,
@@ -283,6 +288,7 @@ def build_baseline(db: Session) -> ClaimDigestOut:
                 "responsibility": record.responsibility_level,
                 "boundary": record.boundary,
                 "allowed_uses": record.allowed_uses,
+                "truth_status": record.truth_status,
             }
             confirmed_lines.append(json.dumps(entry, ensure_ascii=False, separators=(",", ":")))
         else:
