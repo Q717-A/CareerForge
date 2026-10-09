@@ -110,9 +110,7 @@ describe("JobFormModal", () => {
 
     expect(screen.getByLabelText("职位名称")).toHaveValue("机械设计工程师招聘");
     expect(screen.getByLabelText("职位描述（JD）")).toHaveValue("招聘摘要，仅供线索参考");
-    expect(screen.getByLabelText("投递链接")).toHaveValue(
-      "https://careers.example.com/jobs/123",
-    );
+    expect(screen.getByLabelText("投递链接")).toHaveValue("https://careers.example.com/jobs/123");
 
     fireEvent.click(screen.getByRole("button", { name: /保\s*存/ }));
     await waitFor(() => expect(apiMocks.createJob).toHaveBeenCalledOnce());
