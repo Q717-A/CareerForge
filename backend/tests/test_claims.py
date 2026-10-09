@@ -406,3 +406,46 @@ def test_baseline_text_is_bounded(db_session):
         )
     baseline = build_baseline(db_session)
     assert len(baseline.baseline_text) <= 12_000
+
+def test_deleted_claims_never_reach_the_resume_baseline(db_session):
+    """回收站里的已确认经历不得继续进入生成提示词；恢复后才可再次使用。"""
+    confirmed = create_claim(
+        db_session,
+        ClaimCreate(
+            **_payload(
+                title="待删除项目",
+                source_fact="亲手编写了不应再次进入简历的程序",
+                verification_status=VERIFICATION_CONFIRMED,
+                candidate_wording="完成了不应再次进入简历的程序",
+                boundary="本人完成",
+                sources=[{"type": "repository", "location": "https://example.com/repo"}],
+            )
+        ),
+    )
+    pending = create_claim(
+        db_session,
+        ClaimCreate(
+            **_payload(
+                title="待删除的未确认项目",
+                candidate_wording="【待补：旧项目】不应再提示的内容",
+            )
+        ),
+    )
+    assert build_baseline(db_session).confirmed_count == 1
+    assert delete_claim(db_session, confirmed.id)
+    assert delete_claim(db_session, pending.id)
+
+    baseline = build_baseline(db_session)
+    assert baseline.confirmed_count == 0
+    assert baseline.baseline_text == ""
+    assert baseline.blocked_wording == []
+    assert baseline.warnings == []
+
+    from app.services import trash
+
+    assert trash.restore(db_session, "claim", confirmed.id)
+
+    restored = build_baseline(db_session)
+    assert restored.confirmed_count == 1
+    assert "不应再次进入简历" in restored.baseline_text
+    assert restored.blocked_wording == []

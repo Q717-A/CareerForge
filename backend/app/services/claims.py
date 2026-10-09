@@ -262,7 +262,12 @@ def build_baseline(db: Session) -> ClaimDigestOut:
     ``blocked_wording``，生成时要求模型避开。台账为空时返回空基线——这样没启用
     台账的用户，生成行为与以前一字不差。
     """
-    records = db.query(ClaimRecord).order_by(ClaimRecord.id.asc()).all()
+    records = (
+        db.query(ClaimRecord)
+        .filter(trash.live_only(ClaimRecord))
+        .order_by(ClaimRecord.id.asc())
+        .all()
+    )
     if not records:
         return ClaimDigestOut(confirmed_count=0, baseline_text="")
 
@@ -312,4 +317,3 @@ __all__ = [
     "summarize",
     "update_claim",
 ]
-
