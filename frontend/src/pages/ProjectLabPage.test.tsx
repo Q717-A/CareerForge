@@ -322,7 +322,10 @@ describe("ProjectLabPage", () => {
   });
   it("never invents a project gap when job analysis is missing", async () => {
     projectApi.listProjectLabProjects.mockResolvedValue([]);
-    jobsApi.getJobMatch.mockResolvedValue({ id: 0, result: { hard_conditions: [], core_abilities: [], bonus_items: [] } });
+    jobsApi.getJobMatch.mockResolvedValue({
+      id: 0,
+      result: { hard_conditions: [], core_abilities: [], bonus_items: [] },
+    });
     renderPage();
     fireEvent.click(await screen.findByRole("button", { name: /新建补强项目/ }));
     fireEvent.mouseDown(screen.getByRole("combobox", { name: "关联目标岗位" }));
@@ -342,8 +345,18 @@ describe("ProjectLabPage", () => {
           { label: "硕士学历", jd_quote: "硕士", evidence: "", status: "real_gap" },
         ],
         core_abilities: [
-          { label: "机械动力学仿真", jd_quote: "熟悉多体动力学", evidence: "尚不具备", status: "real_gap" },
-          { label: "Python", jd_quote: "掌握 Python", evidence: "材料不足", status: "evidence_insufficient" },
+          {
+            label: "机械动力学仿真",
+            jd_quote: "熟悉多体动力学",
+            evidence: "尚不具备",
+            status: "real_gap",
+          },
+          {
+            label: "Python",
+            jd_quote: "掌握 Python",
+            evidence: "材料不足",
+            status: "evidence_insufficient",
+          },
         ],
         bonus_items: [],
       },
@@ -373,5 +386,4 @@ describe("ProjectLabPage", () => {
       });
     });
   });
-
 });

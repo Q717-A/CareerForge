@@ -109,7 +109,9 @@ export default function ProjectLabPage() {
       const conditions = [...analysis.result.core_abilities, ...analysis.result.bonus_items];
       setRoleGaps(conditions.filter((item) => item.status === "real_gap"));
       setEvidenceGaps(
-        conditions.filter((item) => item.status === "evidence_insufficient" || item.status === "to_confirm"),
+        conditions.filter(
+          (item) => item.status === "evidence_insufficient" || item.status === "to_confirm",
+        ),
       );
       setHardGaps(analysis.result.hard_conditions.filter((item) => item.status === "real_gap"));
       if (!conditions.some((item) => item.status === "real_gap")) {
@@ -373,14 +375,17 @@ export default function ProjectLabPage() {
                 {gapNotice && <Typography.Text type="secondary">{gapNotice}</Typography.Text>}
                 {hardGaps.length > 0 && (
                   <Typography.Text type="warning">
-                    检测到 {hardGaps.length} 项硬性条件不满足；学历、资质等硬门槛不能假定通过项目补齐。
+                    检测到 {hardGaps.length}{" "}
+                    项硬性条件不满足；学历、资质等硬门槛不能假定通过项目补齐。
                   </Typography.Text>
                 )}
                 {roleGaps.map((gap, index) => (
                   <Card key={`gap-${index}`} size="small">
                     <Space direction="vertical" size={4}>
                       <Typography.Text strong>真实能力缺口：{gap.label}</Typography.Text>
-                      {gap.jd_quote && <Typography.Text type="secondary">招聘依据：{gap.jd_quote}</Typography.Text>}
+                      {gap.jd_quote && (
+                        <Typography.Text type="secondary">招聘依据：{gap.jd_quote}</Typography.Text>
+                      )}
                       <Button
                         size="small"
                         onClick={() => {
@@ -395,7 +400,8 @@ export default function ProjectLabPage() {
                 ))}
                 {evidenceGaps.length > 0 && (
                   <Typography.Text type="secondary">
-                    另有 {evidenceGaps.length} 项证据不足或待确认：请先补证明材料，不自动当作能力缺口。
+                    另有 {evidenceGaps.length}{" "}
+                    项证据不足或待确认：请先补证明材料，不自动当作能力缺口。
                   </Typography.Text>
                 )}
               </Space>
