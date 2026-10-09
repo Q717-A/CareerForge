@@ -158,6 +158,9 @@ class CandidateJobOut(BaseModel):
     source: str
     # 原始岗位链接：界面用它显示"回原站看"，也让用户看得出这条是从哪来的。
     source_url: str = ""
+    description: str = ""
+    requirements: str = ""
+    additional_info: str = ""
     # 产生这条候选的采集批次；为空表示不是采集来的。
     collect_task_id: int | None = None
     status: Literal["pending", "imported"]

@@ -43,6 +43,7 @@ README_MD = REPO_ROOT / "README.md"
 # 却没登记给助手"会直接变红，而不是等用户问到才发现助手答"没有这个功能"。
 README_FEATURE_KEYS: dict[str, tuple[str, ...]] = {
     "岗位管理": ("job_manage",),
+    "岗位雷达": ("job_radar",),
     "备选岗位": ("candidate_jobs",),
     "拖拽导入": ("drag_drop",),
     "模拟面试": ("interview",),

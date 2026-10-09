@@ -6,6 +6,9 @@ on:
     paths:
       - "backend/app/**project_lab**"
       - "backend/app/application.py"
+      - "backend/app/api/job_radar.py"
+      - "backend/app/schemas/job_radar.py"
+      - "backend/tests/test_job_radar.py"
       - "backend/app/models/__init__.py"
       - "backend/app/services/feature_catalog.py"
       - "backend/tests/test_assistant_knowledge_audit.py"
@@ -24,6 +27,9 @@ on:
     paths:
       - "backend/app/**project_lab**"
       - "backend/app/application.py"
+      - "backend/app/api/job_radar.py"
+      - "backend/app/schemas/job_radar.py"
+      - "backend/tests/test_job_radar.py"
       - "backend/app/models/__init__.py"
       - "backend/migrations/versions/0022_project_lab.py"
       - "backend/tests/test_project_lab.py"
@@ -66,7 +72,11 @@ jobs:
           app/schemas/project_lab.py
           app/services/project_lab.py
           app/services/feature_catalog.py
+          app/api/job_radar.py
+          app/schemas/job_radar.py
+          tests/test_job_radar.py
           tests/test_project_lab.py
+          tests/test_job_radar.py
           tests/test_migration_0022.py
           tests/test_assistant_knowledge_audit.py
       - name: Project Lab focused tests
@@ -93,7 +103,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - name: Focused UI tests
-        run: npm test -- src/pages/ProjectLabPage.test.tsx src/App.test.tsx --maxWorkers=2
+        run: npm test -- src/pages/ProjectLabPage.test.tsx src/pages/JobRadarPage.test.tsx src/App.test.tsx --maxWorkers=2
       - name: Typecheck
         run: npm run typecheck
       - name: Format check
