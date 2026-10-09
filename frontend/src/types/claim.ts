@@ -19,6 +19,17 @@ export const STRONG_RESPONSIBILITY_LEVELS: readonly ResponsibilityLevel[] = [
 export const VERIFICATION_STATUSES = ["已确认", "待确认", "已过期", "不采用"] as const;
 export type VerificationStatus = (typeof VERIFICATION_STATUSES)[number];
 
+/** 事实来源与可信度：null 表示历史数据尚未分级。 */
+export const TRUTH_STATUSES = ["VERIFIED", "REFRAMED", "INFERRED", "LEARNING", "UNVERIFIED"] as const;
+export type TruthStatus = (typeof TRUTH_STATUSES)[number];
+export const TRUTH_STATUS_LABELS: Record<TruthStatus, string> = {
+  VERIFIED: "已核实事实",
+  REFRAMED: "有事实依据的改写",
+  INFERRED: "待核实推断",
+  LEARNING: "学习中",
+  UNVERIFIED: "未验证",
+};
+
 export const VERIFICATION_STATUS_HINTS: Record<VerificationStatus, string> = {
   已确认: "可以作为事实写进正式简历",
   待确认: "只能进草稿，必须保留【待补】占位符",
@@ -95,6 +106,7 @@ export interface Claim {
   sources: ClaimSource[];
   responsibility_level: ResponsibilityLevel;
   verification_status: VerificationStatus;
+  truth_status: TruthStatus | null;
   allowed_uses: string[];
   interview_details: ClaimInterviewDetails;
   boundary: string;
@@ -151,6 +163,7 @@ export function claimPayload(claim: Claim, patch: Partial<ClaimPayload> = {}): C
     sources: claim.sources,
     responsibility_level: claim.responsibility_level,
     verification_status: claim.verification_status,
+    truth_status: claim.truth_status,
     allowed_uses: claim.allowed_uses,
     interview_details: claim.interview_details,
     boundary: claim.boundary,
@@ -171,6 +184,7 @@ export function emptyClaim(): ClaimPayload {
     sources: [],
     responsibility_level: "参与",
     verification_status: "待确认",
+    truth_status: null,
     allowed_uses: [],
     interview_details: { decisions: [], difficulties: [], verification: [], result: null },
     boundary: "",
