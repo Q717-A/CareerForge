@@ -416,5 +416,4 @@ describe("ProjectLabPage", () => {
       expect.objectContaining({ status: "implemented" }),
     );
   });
-
 });
