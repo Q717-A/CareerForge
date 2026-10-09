@@ -285,3 +285,27 @@ def test_learning_plan_is_not_implementation_evidence(client):
     assert client.patch(
         f"/api/project-lab/{entry['id']}", json={"status": "implemented"}
     ).status_code == 422
+
+def test_project_lab_rejects_empty_evidence_locations(client):
+    """空白来源不能冒充完成证据，即使 evidence 列表非空。"""
+    project = _create(client)
+    project_id = project["id"]
+    assert client.patch(
+        f"/api/project-lab/{project_id}", json={"status": "learning"}
+    ).status_code == 200
+    assert client.patch(
+        f"/api/project-lab/{project_id}",
+        json={"status": "implemented", "deliverables": ["真实完成了一份报告"]},
+    ).status_code == 200
+
+    result = client.patch(
+        f"/api/project-lab/{project_id}",
+        json={
+            "status": "verified",
+            "evidence": [{"type": "document", "location": "   ", "note": "自称有报告"}],
+            "result_summary": "完成报告",
+        },
+    )
+    assert result.status_code == 422
+    assert "位置" in result.json()["detail"]
+    assert client.get(f"/api/project-lab/{project_id}").json()["status"] == "implemented"
