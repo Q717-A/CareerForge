@@ -68,6 +68,7 @@ jobs:
         shell: powershell
         run: |
           .\scripts\tests\Test-Start-ResumeForge.ps1
+          .\scripts\tests\Test-CareerForge-Update.ps1
           .\scripts\tests\Test-Build-Release.ps1
 
       - name: Run tests with coverage

@@ -2,9 +2,9 @@
 
 <img src="docs/images/icon.png" width="88" alt="简历通 ResumeForge 图标" />
 
-# 简历通 ResumeForge
+# CareerForge · AI 求职工作台（基于 ResumeForge）
 
-[![CI](https://github.com/magicapple123/ResumeForge/actions/workflows/ci.yml/badge.svg)](https://github.com/magicapple123/ResumeForge/actions/workflows/ci.yml)
+[![CareerForge CI](https://github.com/Q717-A/CareerForge/actions/workflows/ci.yml/badge.svg)](https://github.com/Q717-A/CareerForge/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/magicapple123/ResumeForge?label=release&color=2f81f7)](https://github.com/magicapple123/ResumeForge/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/magicapple123/ResumeForge?style=flat&logo=github)](https://github.com/magicapple123/ResumeForge/stargazers)
@@ -22,7 +22,7 @@
 <a href="https://magicapple123.github.io/ResumeForge-official/">🏠 官网</a>
 </h3>
 
-当前版本：`0.11.0` · [Release 页面](https://github.com/magicapple123/ResumeForge/releases) · [完整使用指南](docs/user-guide.md) · [架构设计](docs/architecture.md)
+当前版本：`0.11.0`（沿用上游基线版本号，CareerForge 尚无独立 Release） · [上游 Release 页面](https://github.com/magicapple123/ResumeForge/releases) · [完整使用指南](docs/user-guide.md) · [架构设计](docs/architecture.md)
 
 <p>
 <a href="#-交流与反馈"><b>💬 来群里聊：QQ <code>922830167</code></b></a>
@@ -31,6 +31,8 @@
 </p>
 
 </div>
+
+> **CareerForge 分支说明**：本仓库是 [ResumeForge](https://github.com/magicapple123/ResumeForge) 的定制增强分支，正在逐项加入 Job Radar、Project Lab 和 Truth Engine。下方图片、上游官网、交流群和部分旧文档属于原项目，仅作功能参考，并非 CareerForge 的独立发布渠道。**更新本分支时只能使用 [Q717-A/CareerForge](https://github.com/Q717-A/CareerForge) 的代码**，不能使用上游 Release 覆盖安装；详情见 [CareerForge 安全更新说明](docs/CAREERFORGE_INSTALL.md)。
 
 > 在线体验是一个**只读演示版**：界面是真的、数据是虚构的、AI 输出是预录回放。想真的生成、真的导出、真的投递，按下面的[快速开始](#-快速开始)在本机跑起来——第一次双击 `start.cmd` 会自动装好环境。
 
