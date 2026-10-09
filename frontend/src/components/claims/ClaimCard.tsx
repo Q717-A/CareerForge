@@ -8,7 +8,7 @@
 import { DeleteOutlined, EditOutlined, MoreOutlined } from "@ant-design/icons";
 import { Button, Dropdown, Space, Tag, Tooltip, Typography } from "antd";
 import type { Claim, VerificationStatus } from "../../types";
-import { SOURCE_TYPE_LABELS, hasPlaceholder } from "../../types";
+import { SOURCE_TYPE_LABELS, TRUTH_STATUS_LABELS, hasPlaceholder } from "../../types";
 import { useRowActionMenu } from "../common/rowActionMenu";
 
 const STATUS_COLORS: Record<VerificationStatus, string> = {
@@ -75,6 +75,7 @@ export default function ClaimCard({ claim, onEdit, onDelete, onConfirm }: Props)
           <Tag color={STATUS_COLORS[claim.verification_status] ?? "default"}>
             {claim.verification_status}
           </Tag>
+          {claim.truth_status && <Tag>{TRUTH_STATUS_LABELS[claim.truth_status]}</Tag>}
           {claim.last_verified && (
             <Typography.Text type="secondary" className="claim-card-verified">
               最近核实 {claim.last_verified}
