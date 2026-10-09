@@ -35,7 +35,14 @@ const STATUS_COLORS: Record<ProjectLabProject["status"], string> = {
 };
 
 function splitPlan(value: string): string[] {
-  return Array.from(new Set(value.split("\n").map((step) => step.trim()).filter(Boolean)));
+  return Array.from(
+    new Set(
+      value
+        .split("\n")
+        .map((step) => step.trim())
+        .filter(Boolean),
+    ),
+  );
 }
 
 function suggestedLearningPlan(gap: string): string[] {
