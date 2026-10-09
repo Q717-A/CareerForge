@@ -71,7 +71,9 @@ export default function JobsPage() {
   // 「补齐详情」触发中：防止连点，也让按钮有个加载态。
   const [backfilling, setBackfilling] = useState(false);
   // 备选岗位：抽屉里暂存未核对的招聘信息，导入时走正式岗位表单。
-  const [candidatesOpen, setCandidatesOpen] = useState(false);
+  const [candidatesOpen, setCandidatesOpen] = useState(
+    searchParams.get("candidates") === "1",
+  );
   const [importCandidate, setImportCandidate] = useState<CandidateJob | null>(null);
   const [importedCandidateId, setImportedCandidateId] = useState<number | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);

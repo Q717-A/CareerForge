@@ -11,6 +11,7 @@ import {
   MessageOutlined,
   ProfileOutlined,
   QuestionCircleOutlined,
+  RadarChartOutlined,
   SearchOutlined,
   SendOutlined,
   SettingOutlined,
@@ -33,6 +34,7 @@ import brandIcon from "./assets/resumeforge-icon.png";
 
 const HomePage = lazy(() => import("./pages/HomePage"));
 const JobsPage = lazy(() => import("./pages/JobsPage"));
+const JobRadarPage = lazy(() => import("./pages/JobRadarPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const ProjectLabPage = lazy(() => import("./pages/ProjectLabPage"));
 const ClaimsPage = lazy(() => import("./pages/ClaimsPage"));
@@ -65,6 +67,7 @@ export const MENU_ITEMS = [
   // 找岗位
   { key: "/", icon: <HomeOutlined />, label: "首页" },
   { key: "/jobs", icon: <SearchOutlined />, label: "岗位广场" },
+  { key: "/job-radar", icon: <RadarChartOutlined />, label: "岗位雷达" },
   { key: "/favorites", icon: <StarOutlined />, label: "收藏夹" },
   // 做简历
   { key: "/resumes", icon: <FileTextOutlined />, label: "简历中心" },
@@ -200,6 +203,7 @@ export default function App() {
       <Route element={<MainLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/jobs" element={<JobsPage />} />
+        <Route path="/job-radar" element={<JobRadarPage />} />
         <Route path="/resumes" element={<ResumesPage />} />
         <Route path="/project-lab" element={<ProjectLabPage />} />
         <Route path="/apply" element={<ApplyPage />} />
